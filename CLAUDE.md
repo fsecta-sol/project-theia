@@ -34,6 +34,8 @@ is a milestone, not the target. Route every P&L/screening number through determi
 | `theia-birdeye` | Birdeye free | token_list, top_traders, gainers_losers (wallet_pnl needs paid) | API key | 3/4 |
 | `theia-security` | GoPlus | token_security (honeypot/mint/freeze/LP) | keyless | 1/1 |
 | `theia-xscraper` | X.com | profile_lookup (keyless), search_tweets, user_tweets, user_by_login (cookie) | keyless/cookie | 5/5 |
+| `theia-obsidian` | Filesystem | read_note, write_note, append_to_note, batch_read_notes, search_notes, get_backlinks | none | 7/7 |
+| `theia-webscraper` | Web | fetch_page (tiered), fetch_pages, extract_text, detect_protection | none | 4/4 |
 
 Shared infrastructure: `mcp/common/theia_net.py` — DiskCache, ApiKeyRotator (round-robin multi-key), request_json (jittered-backoff HTTP), get_secret/get_secrets (env → .env → .secret).
 

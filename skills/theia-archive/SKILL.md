@@ -18,7 +18,7 @@ The immutable ledger. Every closed trade must be fully reconstructable from stor
 4. Trigger `theia-evaluate-expectancy` for the hypothesis so its verdict reflects the new
    closed result.
 5. If the trade revealed a new failure pattern (a rug type, a bad assumption), drop a sourced
-   lesson into the vault inbox so the knowledge compounds.
+   lesson into the vault inbox via `theia-obsidian.append_to_note(path="00-Inbox/_knowledge/failure-patterns.md", content=..., section="<trade-id>")` so the knowledge compounds.
 
 ## Guardrails
 

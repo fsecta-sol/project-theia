@@ -81,7 +81,7 @@ cat <<EOF
 
 == NEXT (manual, needs your review) ==
   a) Register MCP servers in config.yaml (per manifest). Try:
-       ssh $HOST 'for m in theia-store theia-chainrpc theia-dexdata theia-birdeye theia-security; do hermes mcp install ~/.hermes/theia/mcp/\$m; done'
+       ssh $HOST 'for m in theia-store theia-chainrpc theia-dexdata theia-birdeye theia-security theia-xscraper theia-obsidian theia-webscraper; do hermes mcp install ~/.hermes/theia/mcp/\$m; done'
      (or paste the mcp_servers.<name> blocks; each = command ~/.hermes/theia/mcp/<name>/.venv/bin/python, args server.py)
   b) Set the Theia profile identity from profile/IDENTITY.md.
   c) Smoke-test each layer (MCP probe, compute tests, one dry learn->screen->backtest cycle).

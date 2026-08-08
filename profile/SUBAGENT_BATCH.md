@@ -15,7 +15,7 @@ to the DB.
 
 You may:
 - Read from `theia-store` (read-only for most tables; write to `tasks.result_ref`)
-- Call MCP tools: `theia-dexdata`, `theia-chainrpc`, `theia-birdeye`, `theia-security`, `theia-xscraper`
+- Call MCP tools: `theia-dexdata`, `theia-chainrpc`, `theia-birdeye`, `theia-security`, `theia-xscraper`, `theia-obsidian`, `theia-webscraper`
 - Run `execute_code` for deterministic loops and compute
 
 You may **NOT**:

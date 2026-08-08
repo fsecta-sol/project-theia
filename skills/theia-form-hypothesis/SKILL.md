@@ -20,7 +20,7 @@ AND is backed by a high-conviction wallet signal. No restriction to pump.fun.
 ## Procedure
 
 1. State the hypothesis in one sentence + *why* it should work.
-   Write it to the vault: `02-Projects/theia-hypotheses/H-<nnnn>.md`.
+   Write it to the vault via `theia-obsidian.write_note(path="02-Projects/theia-hypotheses/H-<nnnn>.md", content=..., frontmatter={title, sources, status: "draft"})`.
 
 2. Encode the rule as JSON `rule_spec` — **no free parameters left to the LLM**.
 

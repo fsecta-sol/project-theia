@@ -1,49 +1,154 @@
-# Theia — Hermes profile bundle (review-before-deploy)
+# Project Theia — Solana Memecoin Paper-Trading Agent
 
-Everything here is written **locally for your review**. Nothing is deployed to the Hermes
-server until you approve and we run `deploy/deploy.sh`. Theia is a **separate Hermes profile**
-that **reads** your existing second brain at `/home/hermes/vault` (read-only) but keeps its own
-identity, skills, MCP servers, and cron.
+**Theia** is a Hermes-driven, single-VPS paper-trading agent for the **Solana memecoin market**. It hunts a *mechanical, retail-reachable* edge through survival screening, disciplined exits, and slow-timing selectivity — not speed.
 
-## What maps where on the server
+> Target: **expectancy > 0 AND profit_factor > 1**, net of latency + fees.  
+> Win-rate ≥ 50% is a milestone, never the goal.
 
-| Local (here) | Server target | How it installs |
-|---|---|---|
-| `profile/IDENTITY.md` | Theia profile system-prompt | set as the Theia agent identity (exact wiring confirmed against `hermes` CLI at deploy) |
-| `mcp/theia-*/manifest.yaml` (+ `server.py`) | `~/.hermes/theia/mcp/<name>/` | `hermes mcp install` from the manifest, **or** `deploy.sh` (copy → venv → register `mcp_servers.<name>` in `config.yaml`) |
-| `compute/*.py` | `~/.hermes/theia/compute/` | copied; skills call them via `execute_code` |
-| `skills/theia-*/SKILL.md` | `~/.hermes/skills/<name>/` | copied (same format as existing skills) |
-| `cron/theia-jobs.json` | merged into `~/.hermes/cron/jobs.json` | additive merge, **backup first** |
-| `deploy/env.additions` (names only) | appended to `~/.hermes/.env` | `deploy.sh` copies real values from local `.secret` (never printed) |
+---
 
-## Safety rules for deploy (non-negotiable)
+## What Theia Is (and Isn't)
 
-- **Additive only.** New files use the `theia-*` namespace. The running `config.yaml`,
-  `jobs.json`, and existing skills (incl. the 2895-run `knowledge-curator`) are **backed up
-  before any edit** and only appended to.
-- **Nothing goes live until smoke-tested** per layer (each MCP answers a probe; compute libs
-  pass unit tests; one dry-run learn→screen→backtest cycle before enabling cron).
-- **Theia writes to the vault only via `00-Inbox/_knowledge/`** (your `knowledge-curator`
-  integrates it). It never edits `03-Areas/concepts/` directly.
-- **`theia-store` is the only writer of the Theia DB** (`~/.hermes/theia/theia.db`).
+| What Theia Does | What Theia Does NOT Do |
+|-----------------|------------------------|
+| Discover new memecoin pools via free-tier APIs | ❌ Launch sniping / front-running / same-block fills |
+| Screen tokens for rug/honeypot/wash-farm signals | ❌ Latency arbitrage / MEV (speed — we lose) |
+| Form falsifiable hypotheses with testable `rule_spec` | ❌ Insider info / pre-announcement advantage |
+| Backtest on stored history (API-free, deterministic) | ❌ Market-making at size / moving the book |
+| Paper-trade with simulated fills (live gas + slippage) | ❌ Real money / signing keys anywhere |
+| Learn Solana mechanics and document into second brain | ❌ LLM does money math (PnL, sizing, expectancy) |
 
-## Layers (build order)
+---
+
+## Architecture (4 Layers)
 
 ```
-1. theia-store MCP  (DB — foundation)      ← this bundle starts here
-2. data MCPs        (chainrpc/dexdata/birdeye/security)
-3. compute libs     (expectancy/wilson/pnl/amm/gas/exit/screen)
-4. skills           (learn/screen/hypothesis/backtest/evaluate/paper-trade/monitor/archive)
-5. cron + profile activation + deploy.sh
+L4  HERMES AGENT (profile "theia")
+    ├─ orchestrates via skills
+    ├─ cron · subagents · FTS5 memory · execute_code · Telegram
+    └─ harness: grounding verifier + policy gate + budget breaker
+
+L3  SKILLS (playbooks — named, auditable procedures)
+    ├─ theia-learn-solana      → research topic, write to vault
+    ├─ theia-screen-token      → survival screening (rug/wash/honeypot)
+    ├─ theia-form-hypothesis   → testable rule_spec + vault note
+    ├─ theia-backtest           → API-free backtest on stored history
+    ├─ theia-paper-trade        → simulated fill (AMM + gas + slippage)
+    ├─ theia-monitor            → stops/TP/trail/time + emergency exit
+    ├─ theia-archive            → FIFO PnL, immutable ledger
+    ├─ theia-evaluate-expectancy → promote/reject gate
+    ├─ theia-build-tool         → delegate coding to subagent
+    ├─ theia-xscraper           → X.com research
+    ├─ theia-harness            → grounding + policy verification
+    └─ theia-delegate           → parallel subagent dispatch
+
+L2  COMPUTE LIBS (deterministic math — execute_code only)
+    ├─ expectancy.py, pnl.py (FIFO), wilson.py
+    ├─ amm_sim.py, gas_sim.py, exit_engine.py
+    ├─ screen_score.py, backtest_engine.py, harness.py
+    └─ knowledge_graph.py (red-string auto-discovery)
+
+L1  MCP SERVERS (data boundary — secrets, rate-limit, cache)
+    ├─ theia-store      → SQLite (ONLY writer) — trades, screens, hypotheses
+    ├─ theia-chainrpc   → Helius RPC — swaps, PnL, creator, gas
+    ├─ theia-dexdata    → GeckoTerminal + DexScreener — pools, OHLCV
+    ├─ theia-birdeye    → Birdeye free tier — token lists, top traders
+    ├─ theia-security   → GoPlus — honeypot, mint/freeze, LP flags
+    ├─ theia-xscraper   → X.com — profile lookup, tweets (keyless + cookie)
+    ├─ theia-obsidian   → Vault gateway — read/write Obsidian notes
+    └─ theia-webscraper → Tiered web fetch — curl_cffi → StealthyFetcher (CF bypass)
+
+L0  INFRA
+    └─ VPS · SQLite WAL · DiskCache · token-bucket · .env secrets · Syncthing
 ```
 
-## Builder capability — Hermes subagent
+---
 
-Theia does **not** hand-code tools with its own small model. It delegates building/maintaining
-code (compute libs, MCP tools, scripts) to a **Hermes subagent** (`theia-builder` profile,
-`deepseek-v4-pro` @ high) — then **verifies** the output with tests before trusting it.
-Wired via the `theia-build-tool` skill; full contract in
-[../ARCHITECTURE.md](../ARCHITECTURE.md) → "The builder capability". Division of labor:
-**Theia specs → subagent builds → the harness verifies.**
+## Non-Negotiable Principles
 
-See [../ARCHITECTURE.md](../ARCHITECTURE.md) for the full design and principles.
+1. **VERIFY, DON'T SPECULATE.** No fact without corroboration and a reconstructable source.
+2. **THE LLM NEVER DOES MONEY MATH.** PnL, expectancy, sizing, screening → `compute/` libs only.
+3. **PAPER ONLY.** No signing keys. Fills simulated off live reserves/gas/fees.
+4. **STAY WITHIN FREE BUDGET.** All 8 MCPs use free API tiers. 28/29 tools verified with real calls.
+5. **EARNED AUTONOMY.** Scope widens only on audited, out-of-sample results.
+
+---
+
+## Quick Start
+
+### Run Tests
+
+```bash
+# All 53 golden tests (compute + MCP + obsidian + webscraper)
+python3 -m pytest compute/tests/ mcp/tests/test_mcp_servers.py \
+  mcp/theia-obsidian/tests/test_obsidian.py \
+  mcp/theia-webscraper/tests/test_webscraper.py -q
+```
+
+### Deploy to Hermes Server
+
+```bash
+# Dry run (prints plan, changes nothing)
+./deploy/deploy.sh
+
+# Deploy with backups
+./deploy/deploy.sh --apply
+```
+
+**Deploy does:**
+1. rsync repo root (`mcp/`, `compute/`, `profile/`, `cron/`) → `~/.hermes/theia/`
+2. Copy skills → `~/.hermes/skills/`
+3. Build per-MCP `.venv` + `pip install`
+4. Append missing secrets from local `.secret` → `~/.hermes/.env`
+5. Merge cron jobs (additive, backup first, all `enabled=false`)
+
+**Manual post-deploy:**
+- Register MCP servers: `hermes mcp install ~/.hermes/theia/mcp/<name>`
+- Set Theia profile identity from `profile/IDENTITY.md`
+- Smoke-test per layer → THEN enable cron jobs one at a time
+
+---
+
+## Workflow Loop
+
+```
+LEARN mechanics ──► DISCOVER pools ──► SCREEN tokens
+       │                              │
+       ▼                              ▼
+FORM hypothesis ──► BACKTEST history ──► PAPER trade
+       │                              │
+       ▼                              ▼
+EVALUATE expectancy ──► ARCHIVE ──► refine / repeat
+```
+
+---
+
+## Project Structure
+
+| Directory | What |
+|-----------|------|
+| `mcp/` | 8 MCP servers + `common/theia_net.py` (shared cache/rotator) |
+| `compute/` | Deterministic libs + `tests/` (27 tests) |
+| `skills/` | 12 skill playbooks (SKILL.md each) |
+| `profile/` | Hermes identity prompts (theia, batch-enricher, builder) |
+| `cron/` | Task runner + jobs schedule |
+| `deploy/` | `deploy.sh` + `env.additions` |
+
+---
+
+## Secrets
+
+Store in repo-root `.secret` (gitignored):
+- `HELIUS_API_KEY=key1,key2,key3,key4` (4-key round-robin)
+- `BIRDEYE_API_KEY`, `ALCHEMY_API_KEY`
+- `GOPLUS_APP_KEY` / `GOPLUS_APP_SECRET`
+- Optional: `X_AUTH_TOKEN` + `X_CT0` for X.com cookies
+
+Deploy copies values to server `.env` without ever printing them.
+
+---
+
+## See Also
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — full design, layer rules, storage split
+- [CLAUDE.md](CLAUDE.md) — MCP table, compute libs, known limitations

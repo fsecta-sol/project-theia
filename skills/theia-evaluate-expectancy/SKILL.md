@@ -19,8 +19,8 @@ The single decision that matters. Win-rate is a milestone, never the verdict.
    - **promote** → only if `passes` AND beats random-entry AND on a **fresh out-of-sample**
      window with enough trades (n≥20). Set hypothesis `status='promoted'`.
    - **keep-testing** → positive but thin/among-sample. Needs more forward data.
-   - **reject** → fails the gate or doesn't beat random. Set `status='rejected'`, write the
-     lesson to the vault inbox (why it failed) so the knowledge compounds.
+    - **reject** → fails the gate or doesn't beat random. Set `status='rejected'`, append the
+      lesson to the vault inbox via `theia-obsidian.append_to_note(path="00-Inbox/_knowledge/hypothesis-lessons.md", content=..., section="<hypothesis-id>")` so the knowledge compounds.
 5. Escalate a promotion to the human (Telegram) before it changes any live behavior.
 
 ## Guardrails

@@ -46,12 +46,13 @@
               deterministic · logged        the capability / secret /
               NO LLM money math             rate-limit / cache boundary
               ─────────────────────         ────────────────────────────
-              expectancy · profit_factor    obsidian-mcp   second brain (Syncthing on server)
-              wilson · pnl (FIFO)           dexdata-mcp    GeckoTerminal + Dexscreener
-              amm-sim · gas-sim             chain-rpc-mcp  Helius: tx history · parse_swaps · gas · sim
-              exit-engine                   birdeye-mcp    token lists · top traders · wallet PnL (x-check)
-              wash-score · rug-score        security-mcp   GoPlus honeypot / mint / LP flags
-              screen-score                  wallet-store   SQLite/DuckDB — trades · hypotheses · results
+              expectancy · profit_factor    theia-obsidian   second brain (Syncthing on server)
+              wilson · pnl (FIFO)           theia-webscraper curl_cffi (fast) → StealthyFetcher (CF bypass)
+              amm-sim · gas-sim             dexdata-mcp    GeckoTerminal + Dexscreener
+              exit-engine                   chain-rpc-mcp  Helius: tx history · parse_swaps · gas · sim
+              wash-score · rug-score        birdeye-mcp    token lists · top traders · wallet PnL (x-check)
+              screen-score                  security-mcp   GoPlus honeypot / mint / LP flags
+                                            wallet-store   SQLite/DuckDB — trades · hypotheses · results
                                                     │
                            L0 INFRA:  VPS · SQLite(WAL)/DuckDB · TTL cache · per-source token-bucket · .env secrets
                            TASK QUEUE:  SQLite `tasks` table — polled by task_runner; deps, retry, resume
@@ -103,7 +104,7 @@ skill invocation.
 
 ## The second brain (Obsidian)
 
-Hosted on the server, synced to the agent via **Syncthing**, reached through `obsidian-mcp`.
+Hosted on the server, synced to the agent via **Syncthing**, reached through `theia-obsidian`.
 Knowledge modules (each note = verified facts + `[[wikilinks]]` + diagrams):
 
 ```

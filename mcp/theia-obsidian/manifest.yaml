@@ -1,0 +1,7 @@
+name: theia-obsidian
+description: Vault gateway for Theia's second brain — read/write Obsidian notes with hardcoded write guard.  Append-only by design; no dedup, no locking.
+command: python3
+args:
+  - server.py
+env:
+  THEIA_VAULT: "~/.hermes/profiles/theia/vault"

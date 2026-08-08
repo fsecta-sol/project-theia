@@ -16,7 +16,12 @@ Every claim needs a **source** (docs URL, an on-chain tx, an API response) and m
 
 ## Procedure
 
-### 1. Pick or auto-discover the next topic
+### 1. Pick the next topic
+
+**First boot (seed mode):**
+- Read `SEED_QUESTIONS.md` from the vault via `theia-obsidian`.
+- If it exists and has unanswered questions: pick the next question, run one learn cycle.
+- After all 10 questions are answered: rename the file to `SEED_QUESTIONS_DONE.md` (auto-discovery takes over).
 
 **Auto-discovery (red strings):**
 - Query `theia-store.get_knowledge_links(note, direction='both')` for the current seed topic.
@@ -31,37 +36,31 @@ Every claim needs a **source** (docs URL, an on-chain tx, an API response) and m
 - The graph now auto-grows: AMM → DLMM → Meteora → bin-based pricing → ...
 
 ### 2. Research the topic
-- Web + on-chain examples via `theia-chainrpc`/`theia-dexdata`.
+- **All web fetch goes through `theia-webscraper`** (single gate):
+  - `theia-webscraper.fetch_page(url)` — tiered: curl_cffi (fast) → StealthyFetcher (CF bypass)
+  - `theia-webscraper.extract_text(html)` — clean text extraction
+  - `theia-webscraper.detect_protection(url)` — quick CF probe before heavy fetch
+- On-chain examples via `theia-chainrpc`/`theia-dexdata`.
 - Capture 2–3 independent sources.
 - While reading, scan for **new red strings** (related concepts not yet in the vault).
   If found, immediately `add_knowledge_link(...)` so the graph stays connected.
 
-### 3. Write sourced input
-- Concise input file into the vault inbox: `00-Inbox/_knowledge/<topic-slug>.md`.
+### 3. Write sourced input (via theia-obsidian)
+- Use `theia-obsidian` to create or append to the vault inbox.
+  - If note does not exist: `theia-obsidian.write_note(path="00-Inbox/_knowledge/<topic-slug>.md", content=..., frontmatter={title, sources, tags})`
+  - If note exists (red-string update): `theia-obsidian.append_to_note(path="00-Inbox/_knowledge/<topic-slug>.md", content=..., section="Related Concepts")`
 - Bullet the mechanism, the *why*, and cite sources.
 - Include a **"Related Concepts"** section listing red-string links discovered.
-- Do **not** write into `03-Areas/concepts/` directly — that is the curator's job.
+- Do **not** write into `03-Areas/concepts/` directly — the guard will deny it; that is the curator's job.
 
 ### 4. Index and link
 - `theia-store.index_note(note_path, topic, status='draft', sources=[...])`.
-- For each related concept found, `add_knowledge_link(note_path, related_note, link_type, source, confidence)`.
+- For each related concept found, `theia-store.add_knowledge_link(note_path, related_note, link_type, source, confidence)`.
 
 ### 5. Auto-crawl trigger
 - After indexing, check: are there high-confidence (>0.6) related topics not yet covered?
 - If yes and API budget is free, auto-queue a `theia-learn-solana` task for that topic
   via `theia-store` task queue (type='learn', payload={'topic': ...}).
-
-## Curriculum (seed order)
-
-```
-1 Solana fundamentals   account model · SPL token · PDA · CU & fees · slots/finality
-2 DEX & swap mechanics   Raydium CPMM/CLMM · Jupiter routing · pump.fun bonding curve
-3 Token lifecycle        creation · launch · mint/freeze authority · LP · graduation
-4 Failure modes          rug · honeypot · wash trade · sniper/MEV
-```
-
-The graph is **not** limited to this curriculum — auto-discovery can branch to any Solana
-concept found in docs (e.g., DLMM, governance, NFT standards).
 
 ## Budget
 

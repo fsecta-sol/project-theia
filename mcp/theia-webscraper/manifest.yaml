@@ -1,0 +1,6 @@
+name: theia-webscraper
+description: Tiered web fetch — curl_cffi (fast) + StealthyFetcher (CF bypass).  All Theia web access goes through this single gate.
+command: python3
+args:
+  - server.py
+env: {}
