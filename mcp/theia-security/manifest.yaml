@@ -1,0 +1,25 @@
+manifest_version: 1
+name: theia-security
+description: GoPlus token safety (Solana) — mint/freeze authority, honeypot/tax flags, LP & holder concentration. Static screening; pair with a live sell simulation.
+source: local (project-theia/theia/mcp/theia-security)
+
+transport:
+  type: stdio
+  command: "${INSTALL_DIR}/.venv/bin/python"
+  args: ["${INSTALL_DIR}/server.py"]
+
+install:
+  type: local
+  bootstrap:
+    - "python3 -m venv .venv"
+    - ".venv/bin/pip install -r requirements.txt"
+
+# Keyless works on the free tier; GOPLUS_APP_KEY/SECRET optional for higher limits.
+auth:
+  type: none
+
+tools:
+  default_enabled: [token_security]
+
+post_install: |
+  Free tier is keyless (30/min), throttled ~2.2s, cached 24h. Restart the Theia session.

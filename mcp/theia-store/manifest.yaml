@@ -1,0 +1,73 @@
+# Theia first-party MCP (not from the Nous catalog). Schema version 1 — keys map
+# 1:1 to the mcp_servers.<name> block written into ~/.hermes/config.yaml.
+manifest_version: 1
+
+name: theia-store
+description: The only writer of Theia's SQLite DB — tokens, pools, prices, screens, hypotheses, backtests, paper trades, fills, archives, knowledge index, tasks, budget, heartbeat.
+source: local (project-theia/theia/mcp/theia-store)
+
+# Local stdio server. deploy.sh copies this dir to ~/.hermes/theia/mcp/theia-store,
+# creates .venv, pip-installs requirements.txt, then registers this block. (First-party
+# local server, so no git catalog entry; ${INSTALL_DIR} = the copied dir.)
+transport:
+  type: stdio
+  command: "${INSTALL_DIR}/.venv/bin/python"
+  args:
+    - "${INSTALL_DIR}/server.py"
+
+install:
+  type: local            # deploy.sh handles: mkdir venv → pip install -r requirements.txt
+  bootstrap:
+    - "python3 -m venv .venv"
+    - ".venv/bin/pip install -r requirements.txt"
+
+# No external API — writes a local DB file. Path overridable via THEIA_DB.
+auth:
+  type: none
+
+env:
+  - name: THEIA_DB
+    default: "~/.hermes/theia/theia.db"
+    required: false
+    secret: false
+
+# Internal DB — Theia is the sole owner, so all tools are enabled.
+tools:
+  default_enabled:
+    - upsert_token
+    - get_token
+    - upsert_pool
+    - record_price_snapshots
+    - get_price_path
+    - record_screen
+    - get_latest_screen
+    - upsert_hypothesis
+    - get_hypothesis
+    - list_hypotheses
+    - record_backtest
+    - open_paper_trade
+    - record_fill
+    - close_trade
+    - get_open_trades
+    - index_note
+    - set_state
+    - get_state
+    - heartbeat
+    - budget_add
+    - upsert_token_v2
+    - record_price_snapshot
+    - upsert_corpus
+    - get_corpus
+    - update_graduation
+    - record_llm_shot
+    - get_session_shots
+    - upsert_context_window
+    - get_context_window
+    - add_knowledge_link
+    - get_knowledge_links
+    - discover_knowledge_links
+
+post_install: |
+  theia-store owns ~/.hermes/theia/theia.db (WAL). It is the ONLY component allowed to
+  write it. Schema auto-applies on first run (schema.sql). Restart the Theia session to
+  load the tools.

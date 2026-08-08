@@ -1,0 +1,24 @@
+manifest_version: 1
+name: theia-dexdata
+description: GeckoTerminal (new/trending pools, OHLCV, pool trades, token pools) + Dexscreener enrichment. Keyless.
+source: local (project-theia/theia/mcp/theia-dexdata)
+
+transport:
+  type: stdio
+  command: "${INSTALL_DIR}/.venv/bin/python"
+  args: ["${INSTALL_DIR}/server.py"]
+
+install:
+  type: local
+  bootstrap:
+    - "python3 -m venv .venv"
+    - ".venv/bin/pip install -r requirements.txt"
+
+auth:
+  type: none
+
+tools:
+  default_enabled: [new_pools, trending_pools, token_pools, pool_trades, pool_ohlcv, pairs_by_token]
+
+post_install: |
+  Keyless. Gecko is throttled ~6s to respect the free limit. Restart the Theia session.

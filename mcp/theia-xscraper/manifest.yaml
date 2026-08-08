@@ -1,0 +1,41 @@
+manifest_version: 1
+name: theia-xscraper
+description: >
+  X.com scraping — profile lookup (keyless), full tweet search, user timelines,
+  and user resolution (twscrape cookie-auth). Phase 1: keyless HTTP via scrapling
+  Fetcher with curl-cffi Chrome impersonation. Phase 2: twscrape GraphQL with
+  cookie auth for real API access. Cached + rate-limited at the boundary.
+source: local (project-theia/theia/mcp/theia-xscraper)
+
+transport:
+  type: stdio
+  command: "${INSTALL_DIR}/.venv/bin/python"
+  args: ["${INSTALL_DIR}/server.py"]
+
+install:
+  type: local
+  bootstrap:
+    - "python3 -m venv .venv"
+    - ".venv/bin/pip install -r requirements.txt"
+
+auth:
+  type: none
+  env:
+    - name: X_AUTH_TOKEN
+      prompt: "X.com auth_token cookie (from logged-in browser → DevTools → Cookies → x.com)"
+      required: false
+      secret: true
+    - name: X_CT0
+      prompt: "X.com ct0 cookie (from logged-in browser → DevTools → Cookies → x.com)"
+      required: false
+      secret: true
+
+tools:
+  default_enabled: [profile_lookup, search_tweets, user_tweets, user_by_login, health]
+
+post_install: |
+  Phase 1 (keyless): profile_lookup works immediately — no setup needed.
+  Phase 2 (full API): set X_AUTH_TOKEN + X_CT0 env vars for search_tweets,
+  user_tweets, and user_by_login. Export cookies from a browser session
+  that's logged into X.com (DevTools → Application → Cookies → x.com).
+  Restart the Theia session.

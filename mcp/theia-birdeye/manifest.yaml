@@ -1,0 +1,29 @@
+manifest_version: 1
+name: theia-birdeye
+description: Birdeye (free Standard) — token lists, per-coin top traders, global gainers/losers, wallet PnL. DISCOVERY only; PnL is a cross-check, never source of truth.
+source: local (project-theia/theia/mcp/theia-birdeye)
+
+transport:
+  type: stdio
+  command: "${INSTALL_DIR}/.venv/bin/python"
+  args: ["${INSTALL_DIR}/server.py"]
+
+install:
+  type: local
+  bootstrap:
+    - "python3 -m venv .venv"
+    - ".venv/bin/pip install -r requirements.txt"
+
+auth:
+  type: api_key
+  env:
+    - name: BIRDEYE_API_KEY
+      prompt: "Birdeye API key (free Standard tier)"
+      required: true
+      secret: true
+
+tools:
+  default_enabled: [token_list, top_traders, gainers_losers, wallet_pnl]
+
+post_install: |
+  Wallet APIs are beta (5/s, 75/min) — throttled ~1.1s. Restart the Theia session.

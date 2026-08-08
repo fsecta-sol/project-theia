@@ -1,0 +1,32 @@
+manifest_version: 1
+name: theia-chainrpc
+description: Solana read-only RPC via Helius — wallet swap history, priority-fee oracle, health, creator tracking (multi-key round-robin). No signing.
+source: local (project-theia/theia/mcp/theia-chainrpc)
+
+transport:
+  type: stdio
+  command: "${INSTALL_DIR}/.venv/bin/python"
+  args: ["${INSTALL_DIR}/server.py"]
+
+install:
+  type: local
+  bootstrap:
+    - "python3 -m venv .venv"
+    - ".venv/bin/pip install -r requirements.txt"
+
+auth:
+  type: api_key
+  env:
+    - name: HELIUS_API_KEY
+      prompt: "Helius API key(s) — comma-separated for multi-key rotation (key1,key2,key3)"
+      required: true
+      secret: true
+
+tools:
+  default_enabled: [health, wallet_swaps, gas_oracle, creator_tokens, creator_history]
+
+post_install: |
+  Multi-key: set HELIUS_API_KEY=key1,key2,key3 — each key throttled at 0.6s independently.
+  3 keys → effectively 5 req/s. 4 keys → 6.6 req/s. Use free Helius keys (1 per account).
+  Creator tracking scans SPL Token Program create events from any wallet's history.
+  Restart the Theia session.
