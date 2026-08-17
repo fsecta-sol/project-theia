@@ -177,6 +177,31 @@ Shared infrastructure: `mcp/common/theia_net.py` — DiskCache, ApiKeyRotator (r
 | `cron/theia-jobs.json` | Hermes cron schedule (8 jobs, all `enabled=false` until smoke test) |
 | `deploy/deploy.sh` | Additive deploy to VPS with backups |
 
+### Wallet Pipeline (built 2026-08-17 — persistent forward paper trading)
+
+A 24/7 smart-money follow loop. Discovery finds **latency-tolerant** wallets (edge
+survives a 30-min copy delay), then tracks/paper-trades them continuously. Deployed as
+`no_agent` (0-LLM) cron scripts under the `theia` profile.
+
+| Script | What | Schedule |
+|--------|------|----------|
+| `theia-wallet-pipeline.py` | Poll tracked wallets → capture new buys → screen (liq>$5k + price cap) → open paper trades | every 10 min |
+| `theia-wallet-monitor.py` | Apply `exit_engine` (stop -35% / TP 2x-4x / 30m time stop) to open positions → archive PnL | every 5 min |
+| `theia-wallet-report.py` | Aggregate forward stats (expectancy/PF/win-rate) for the daily digest | daily 07:00 |
+
+**Key learning (the discriminator):** wallet win-rate/PnL is the *wrong* filter — high
+win-rate wallets are speed-scalpers whose edge evaporates <30 min. The correct filter is
+**latency tolerance** (`latency_exp > 0` when followed 30-min late). 8 wallets currently
+flagged `is_smart_money=1` in `wallet_profiles`.
+
+**Validation state:** in-sample cluster backtest n=16, win 62.5%, +0.015 SOL/trade, PF 1.57 —
+NOT yet significant. Forward paper trading is the only way to prove it out-of-sample. Gate:
+≥50 forward trades, then expect `expectancy > 0 AND profit_factor > 1` net of fees or kill.
+
+Supporting compute: `compute/wallet_profiler.py` (FIFO round-trip matching + pattern
+classification), `compute/tests/test_wallet_profiler.py`. DB tables: `wallet_profiles`,
+`wallet_trades`, `wallet_clusters`, `wallet_signals`.
+
 ### Skills (L3 — Theia's playbooks)
 
 `theia-learn-solana`, `theia-screen-token`, `theia-form-hypothesis`, `theia-backtest`,

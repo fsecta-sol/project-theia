@@ -1,0 +1,120 @@
+{
+  "_comment": "Theia cron jobs — MERGE these into ~/.hermes/cron/jobs.json's 'jobs' array (deploy.sh does it with a backup). All start DISABLED; enable only after per-layer smoke tests. API-free jobs (learn/backtest/evaluate) keep Theia productive when API budget is spent.",
+  "jobs": [
+    {
+      "id": "theia-discover-screen",
+      "name": "theia-discover-screen",
+      "prompt": "Discover recent Solana pools via theia-dexdata.new_pools() and trending_pools(). FILTER: ONLY process tokens where pair.dexId contains \"pump\" OR \"pump.fun\" OR \"pump_fun\", AND liquidity_usd < $100,000 (memecoin range). SKIP tokens with \"wrapped\", \"USD\", \"USDC\", \"SOL\" in baseToken.symbol (established tokens — different dynamics). SKIP tokens where pair already exists in tokens table (dedup by mint). For each NEW token: 1) Call theia-chainrpc.token_creator(mint) → creator wallet (Helius RPC → Pump.fun API fallback). 2) Extract launch_ts from pair.pairCreatedAt (DexScreener). 3) Call theia-dexdata.pairs_by_token([mint]) → price, liquidity, volume. 4) Classify time_regime from pairCreatedAt using compute/time_regime.py. 5) Upsert to theia-store.upsert_token_v2() with all fields. 6) Record price to theia-store.record_price_snapshot(). 7) Run theia-screen-token for safety screening. Respect per-source budget. DexScreener throttle: 1 req/sec, batch enrich in groups of 30. Pump.fun API: throttle 1 req/sec (fallback only). Do NOT trade here.",
+      "skills": ["theia-screen-token"],
+      "skill": "theia-screen-token",
+      "schedule": {"kind": "cron", "expr": "*/10 * * * *", "display": "every 10 min"},
+      "enabled": false,
+      "state": "scheduled"
+    },
+    {
+      "id": "theia-monitor",
+      "name": "theia-monitor",
+      "prompt": "If theia-store.get_open_trades() is non-empty, run theia-monitor over the open book (stops/TP/trail/time + emergency rug exit). If there are no open positions, output [SILENT] and exit.",
+      "skills": ["theia-monitor", "theia-archive"],
+      "skill": "theia-monitor",
+      "schedule": {"kind": "cron", "expr": "* * * * *", "display": "every 1 min (guards on open positions)"},
+      "enabled": false,
+      "state": "scheduled"
+    },
+    {
+      "id": "theia-backtest",
+      "name": "theia-backtest",
+      "prompt": "API-FREE. Take draft/backtesting hypotheses from theia-store and run theia-backtest on STORED history (no live calls). Record results; update best metrics. If nothing to test, output [SILENT].",
+      "skills": ["theia-backtest"],
+      "skill": "theia-backtest",
+      "schedule": {"kind": "cron", "expr": "15 * * * *", "display": "hourly"},
+      "enabled": false,
+      "state": "scheduled"
+    },
+    {
+      "id": "theia-learn",
+      "name": "theia-learn",
+      "prompt": "API-FREE fallback work. Advance the Solana curriculum via theia-learn-solana: research the next topic (or one a pending hypothesis needs), verify sources, drop a sourced input into 00-Inbox/_knowledge/ for the knowledge-curator. If budget for API-bound work is available and there is pending discovery/screening, prefer that instead.",
+      "skills": ["theia-learn-solana"],
+      "skill": "theia-learn-solana",
+      "schedule": {"kind": "cron", "expr": "45 */2 * * *", "display": "every 2h"},
+      "enabled": false,
+      "state": "scheduled"
+    },
+    {
+      "id": "theia-evaluate",
+      "name": "theia-evaluate",
+      "prompt": "Run theia-evaluate-expectancy across hypotheses with new closed results. Promote only on the gate (expectancy>0 AND profit_factor>1) beating random-entry on fresh out-of-sample data with n>=20. Escalate promotions to the human. Put a short digest in the final response — Hermes auto-delivers it to the origin channel.",
+      "skills": ["theia-evaluate-expectancy"],
+      "skill": "theia-evaluate-expectancy",
+      "schedule": {"kind": "cron", "expr": "30 6 * * *", "display": "daily 06:30"},
+      "enabled": false,
+      "state": "scheduled"
+    },
+    {
+      "id": "theia-heartbeat",
+      "name": "theia-heartbeat",
+      "prompt": "Call theia-store.heartbeat with a one-line status (open positions, budget used per source, pending hypotheses). If discovery has produced nothing in >30 min or a source is banned, put an urgent alert in the final response — Hermes auto-delivers it to the origin channel. Otherwise output [SILENT].",
+      "skills": [],
+      "skill": "",
+      "schedule": {"kind": "cron", "expr": "*/5 * * * *", "display": "every 5 min"},
+      "enabled": false,
+      "state": "scheduled"
+    },
+    {
+      "id": "theia-label-corpus",
+      "name": "theia-label-corpus",
+      "prompt": "For all tokens in graduation_status='bonding' that are >2 hours old: check graduation via theia-dexdata.pairs_by_token([mint]). If token has Raydium/Orca/Meteora pool → label 'graduated'. If token meets death criteria (age >24h since launch AND no graduation, or price dropped >90% from ATH AND liquidity<200 AND volume<500) → label 'dead' with death_reason. Update via theia-store.update_graduation(). Then upsert labeled tokens to theia-store.upsert_corpus() with final_price_usd and final_liquidity_usd.",
+      "skills": ["theia-screen-token"],
+      "skill": "theia-screen-token",
+      "schedule": {"kind": "cron", "expr": "0 * * * *", "display": "hourly — label graduated/dead + populate corpus"},
+      "enabled": false,
+      "state": "scheduled"
+    },
+    {
+      "id": "theia-task-runner",
+      "name": "theia-task-runner",
+      "prompt": "Run cron/task_runner.py --once to poll the task queue, resolve dependencies, and execute ready tasks. This drives all batch work (discovery, backtest, wallet enrichment) through the persistent queue. If no tasks ready, output [SILENT].",
+      "skills": [],
+      "skill": "",
+      "schedule": {"kind": "cron", "expr": "*/1 * * * *", "display": "every 1 min — task queue worker"},
+      "enabled": false,
+      "state": "scheduled"
+    },
+    {
+      "id": "theia-wallet-pipeline",
+      "name": "theia-wallet-pipeline",
+      "prompt": "Poll latency-tolerant smart-money wallets (is_smart_money=1), capture new buys, screen (liq>$5k + price cap 1.5x), open PAPER trades for passing signals.",
+      "skills": [],
+      "skill": "",
+      "schedule": {"kind": "cron", "expr": "*/10 * * * *", "display": "every 10 min — wallet signal capture + paper entry"},
+      "enabled": true,
+      "state": "scheduled",
+      "no_agent": true,
+      "script": "theia-wallet-pipeline.sh"
+    },
+    {
+      "id": "theia-wallet-monitor",
+      "name": "theia-wallet-monitor",
+      "prompt": "Check open paper positions, apply exit_engine (stop -35% / TP 2x-4x / 30m time stop), archive realized PnL.",
+      "skills": [],
+      "skill": "",
+      "schedule": {"kind": "cron", "expr": "*/5 * * * *", "display": "every 5 min — paper position exit guard"},
+      "enabled": true,
+      "state": "scheduled",
+      "no_agent": true,
+      "script": "theia-wallet-monitor.sh"
+    },
+    {
+      "id": "theia-wallet-report",
+      "name": "theia-wallet-report",
+      "prompt": "Format and deliver the daily wallet-pipeline digest (tracked wallets, signals, open/closed positions, forward expectancy/PF/win-rate) to the origin channel.",
+      "skills": [],
+      "skill": "",
+      "schedule": {"kind": "cron", "expr": "0 7 * * *", "display": "daily 07:00 — wallet pipeline digest"},
+      "enabled": true,
+      "state": "scheduled",
+      "script": "theia-wallet-report.sh"
+    }
+  ]
+}

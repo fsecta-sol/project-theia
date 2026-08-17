@@ -43,3 +43,6 @@ cache/
 # Session files
 last_session.txt
 *.json
+
+# BUT track the cron definitions (source of truth for scheduled jobs)
+!cron/theia-jobs.json
