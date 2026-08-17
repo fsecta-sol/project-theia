@@ -22,6 +22,106 @@ is a milestone, not the target. Route every P&L/screening number through determi
 4. **STAY WITHIN FREE BUDGET.** All 6 MCPs use free API tiers only. 28/29 tools tested.
 5. **EARNED AUTONOMY.** Scope widens only on audited, out-of-sample results.
 
+## Rollout phases
+
+Theia rolls out in gated phases — **knowledge first, trading later.** This encodes the
+EARNED-AUTONOMY principle: each phase is gated by the previous phase's **Exit** criterion,
+and cron jobs are enabled **one at a time** (in `~/.hermes/profiles/theia/cron/jobs.json`)
+only after that phase's smoke test. **Empty trading tables are expected until their phase —
+they mean "not yet," not "broken."** Do not switch a later phase on early.
+
+- **Phase 0 — Foundation & deploy — ✅ DONE.** L1 MCP + L2 compute built & unit-tested;
+  deployed to Hermes (profile `theia`); cron token-burn hygiene fixed (`theia-heartbeat`
+  disabled; `theia-task-runner` runs as a `no_agent` 0-LLM script).
+- **Phase 1 — Knowledge-first ("week 1") — 🟢 CURRENT.** Only `theia-learn` (2h) +
+  `theia-task-runner` (infra) run; trading crons stay off. Work the 10 `SEED_QUESTIONS.md`
+  → auto-discovery red-string graph. **Exit:** all 10 seed questions answered (each note ≥1
+  source); notes promoted `draft → verified` (define the rule this phase); graph spans the 5
+  knowledge modules; screening primitives covered (LP burn/lock, mint/freeze authority,
+  rug/honeypot, graduation).
+- **Phase 2 — Discovery + screening (read-only, no trades).** Enable `theia-discover-screen`
+  (+ `label-corpus`); fill `tokens`/`pools`/`screens`/`token_corpus`. Tune
+  `discovery_filter.py`; validate `screen_score.py` against a known rug/grad corpus.
+  **Exit:** target N tokens screened; grad/dead separation measured; every screen reconstructable.
+- **Phase 3 — Hypothesis + backtest (API-free).** Enable `theia-form-hypothesis` +
+  `theia-backtest` (`run_hypotheses.py` / `backtest_engine.py`); walk-forward on stored
+  `price_snapshots`, gas + slippage applied. **Exit:** ≥1 hypothesis passing
+  **expectancy > 0 AND profit_factor > 1** out-of-sample.
+- **Phase 4 — Harness + guardrails live (the money-action gate).** Wire `harness.py`
+  (`verify_grounding` + `policy_gate`) into the live loop; populate `llm_shots` +
+  `context_windows` (both 0 today — built but never called); turn on the budget breaker
+  (`budget_ledger`). Harden the regex-based grounding before trusting it to gate money.
+  **Exit:** `llm_shots` logs every shot; `policy_gate` demonstrably DENY/ESCALATE on a test;
+  `budget_ledger` tracks per-source spend.
+- **Phase 5 — Paper trade + monitor.** Enable `theia-paper-trade` + `theia-monitor` +
+  `theia-archive`; simulated fills off live reserves/gas/fees; `exit_engine.py` for exits.
+  **Exit:** the success metric — **expectancy > 0 AND profit_factor > 1 net of latency + fees**,
+  out-of-sample, over a meaningful sample.
+- **Phase 6 — Scale via delegation (only when volume demands it).** Register subagent
+  profiles (`theia-batch-enricher`, `theia-builder`) in Hermes config (only `theia` today);
+  implement the `cron/task_runner.py` placeholder handlers; wire `_handle_delegate` → real
+  subagent dispatch. **Trigger:** only when serial throughput is the bottleneck — not before.
+
+## Theia v3 — smart-money pivot (research 2026-08-09)
+
+**Why v3.** The v2 "static screening edge" was tested and is **weak**: fresh pump.fun tokens
+are almost all clean at t0 (mint/freeze revoked by default, no honeypot flags, holders
+un-indexed), so `screen_score` acts as little more than a **liquidity gate** — the rug is a
+**forward** event (LP pull / dump), not a static launch-time flag. New edge candidate:
+**follow verified-profitable Solana wallets, latency-tolerant (≤30 min)** — distinct from the
+dead copy-trade thesis (which needed instant fills). Screening demotes to a **safety veto**,
+not the edge.
+
+### GMGN — the smart-money data source (verified working)
+
+GMGN.ai already computes full per-wallet PnL / win-rate / PnL-distribution / tags for Solana
+— it **collapses** the hardest part (a verified smart-wallet DB) from a build into a **scrape**.
+- **Access:** Cloudflare-gated. `theia-webscraper` **Tier 2 (`tier="browser"`, StealthyFetcher)**
+  bypasses the Turnstile challenge on the VPS (confirmed). Tier 1 (curl_cffi) gets 403 on the API.
+  Response body is under the `content` key (not `text`).
+- **Endpoints (verified):**
+  - Smart-money leaderboard (ranked wallets + **full PnL distribution buckets** +
+    `tags`): `/defi/quotation/v1/rank/sol/wallets/{period}?orderby=pnl_{period}&direction=desc&limit=N`
+  - Per-wallet stats: `/defi/quotation/v1/smartmoney/sol/walletNew/{addr}?period=30d` (account-level
+    `realized_profit`/`pnl` always populated; `winrate`/`token_num`/distribution only for
+    GMGN-tracked wallets — else use the leaderboard, whose buckets ARE populated).
+- **Key finding:** GMGN's account-level `realized_profit` is the correct **denominator** —
+  it revealed a Birdeye `top_traders` "winner" (+32,725 SOL across winner tokens) is actually
+  net **−742 SOL** (a losing high-freq bot, 700 trades/30d). Birdeye `top_traders` =
+  volume-ranked → surfaces bots/MMs; GMGN = true account PnL. Use GMGN, not top_traders, to score wallets.
+- **`winrate` = compute from distribution buckets:** `pnl_gt_5x_num`, `pnl_2x_5x_num`,
+  `pnl_lt_2x_num` (wins) vs `pnl_minus_dot5_0x_num`, `pnl_lt_minus_dot5_num` (losses). Filter
+  bots/wash via `tags` (drop `wash_trader`, `bot`) + trade-count.
+- GMGN is **provider data** (like GoPlus) — a wallet-ranking *signal*, not reconstructable by
+  us; our own trade PnL still comes from `pnl.py` FIFO on paper fills. Cache aggressively
+  (browser tier is slow). Auth tokens are per-session and **never** committed.
+
+### Fomo (fomo.family) — evaluated, DROPPED
+
+Real API `prod-api.fomo.family` (Privy-JWT auth, no hard CF). But it's an **EVM-focused**
+consumer social-trading/payments app (Base/BSC/ETH/Monad; Solana present but not the focus) —
+its leaderboard is not Solana wallet-PnL analytics. **Not a fit** for Theia's Solana thesis;
+GMGN stays primary. Reconsider only for cross-validation if it exposes Solana wallet PnL.
+
+### v3 pipeline & build order
+
+```
+harvest GMGN smart wallets → filter (tags + distribution, drop wash/bot) → DB smart_wallets
+  → watch their new early buys → SAFETY screen (screen_score = veto) → paper-enter ≤30min
+  → exit_engine → expectancy → archive
+```
+New: `theia-gmgn` MCP (`smart_wallets`, `wallet_stats`), `smart_score.py` (skill from buckets +
+tag filter), theia-store `smart_wallets`/`wallet_signals` tables, `theia-harvest-wallets` /
+`theia-watch-wallets` skills, harvest (daily) + watch (<30 min) crons. Reuse: `exit_engine`,
+`expectancy`, `amm_sim`, `backtest_engine`, `theia-webscraper`. Not needed: a Helius
+`wallet_pnl_full` (GMGN provides). Demoted: `screen_score` → safety veto.
+
+**Validate-first GATE (do this before building the live loop):** backtest "follow 30-min-late"
+on GMGN smart wallets' *past* buys (Birdeye `txs asc` genesis + OHLCV via webscraper) →
+out-of-sample expectancy. **+EV → build. ≤0 → thesis dead, stop.** All the pieces for this
+gate are already proven working this session; it is one backtest, not a build. Maps to
+rollout Phase 3.
+
 ## Architecture — implemented
 
 ### MCP servers (L1 — data boundary)

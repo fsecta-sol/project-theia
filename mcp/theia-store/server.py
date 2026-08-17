@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import time
 from pathlib import Path
@@ -30,26 +31,25 @@ def _conn() -> sqlite3.Connection:
 
 def _init() -> None:
     c = _conn()
-    # Base schema: all CREATE IF NOT EXISTS statements
-    base = SCHEMA.read_text()
-    # Split: run CREATE statements first, then ALTER statements separately
-    creates = []
-    alters = []
-    for stmt in base.split(";"):
-        s = stmt.strip()
-        if not s or s.startswith("--"):
+    # Execute schema script in full; SQLite handles comments and PRAGMA natively
+    schema = SCHEMA.read_text()
+    # Strip line-level comments so semicolons inside comments don't split
+    # statements, then split and execute individually so ALTER TABLE failures
+    # (e.g. duplicate column) are idempotent rather than fatal.
+    clean = re.sub(r"--.*", "", schema)
+    for stmt in clean.split(";"):
+        stmt = stmt.strip()
+        if not stmt or stmt.startswith("PRAGMA"):
             continue
-        if s.upper().startswith("ALTER TABLE"):
-            alters.append(s)
-        else:
-            creates.append(s)
-    for s in creates:
-        c.execute(s + ";")
-    for s in alters:
         try:
-            c.execute(s + ";")
-        except Exception:
-            pass  # column already exists — safe to skip
+            c.execute(stmt)
+        except sqlite3.OperationalError as e:
+            # Swallow duplicate-column / duplicate-index / duplicate-table errors
+            msg = str(e).lower()
+            if "duplicate" in msg or "already exists" in msg:
+                pass
+            else:
+                raise
     c.commit()
     c.close()
 

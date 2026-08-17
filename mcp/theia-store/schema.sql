@@ -1,5 +1,5 @@
 -- Theia store — SQLite (OLTP + WAL). Owned exclusively by theia-store MCP.
--- Every number here is reconstructable from stored inputs; no black boxes.
+-- Every number here is reconstructable from stored inputs. No black boxes.
 -- USD unless a column says _sol/_native/_lamports. Times are UTC epoch seconds.
 
 PRAGMA journal_mode=WAL;

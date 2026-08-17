@@ -72,7 +72,15 @@ Theia runs sesuai — not drifting, not hallucinating — by verifying and gatin
    - **ALLOW** → proceed with the skill's normal flow.
    - **DENY** → discard LLM output, log the rejection, retry with tighter prompt OR
      escalate to human if repeated.
-   - **ESCALATE** → pause, send alert to Telegram with full shot details, wait for human.
+   - **ESCALATE** → pause, send alert via `compute.telegram_notify` with full shot details, wait for human:
+     ```python
+     from compute.telegram_notify import notify
+     notify(
+         f"ESCALATE: skill={skill} | reason={policy_reason} | shot_id={shot_id}\n"
+         f"Review llm_shots table for full context.",
+         urgency="high"
+     )
+     ```
 
 7. Record the shot:
    ```python

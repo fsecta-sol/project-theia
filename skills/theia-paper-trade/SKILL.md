@@ -24,7 +24,12 @@ at a worse/later price than the trigger (we can't win the latency race).
 4. Persist: `theia-store.open_paper_trade(...)` + `record_fill(seq=0, kind='entry', ...,
    reserves_base, reserves_quote, priority_fee, native_usd, gas_sol, slippage)` — the full
    snapshot so PnL/gas/slippage re-derive later.
-5. Hand the open position to `theia-monitor`.
+5. Notify via Telegram (low urgency — log only):
+   ```python
+   from compute.telegram_notify import notify
+   notify(f"Paper trade opened: {mint} | Size: {size_sol} SOL | Hypothesis: {hypothesis_id}", urgency="low")
+   ```
+6. Hand the open position to `theia-monitor`.
 
 ## Guardrails
 

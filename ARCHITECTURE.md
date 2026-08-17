@@ -8,6 +8,60 @@
 > non-negotiable principles, the free-tier data plumbing) and throws out the copy-trade
 > strategy.
 
+## Build reality & sequencing — READ FIRST (audited 2026-08-09)
+
+> **This section is the ground truth; everything below it is *intended design*.** The audit
+> found a healthy skeleton with unwired seams: every layer's components exist and pass their
+> own unit tests, but the arrows *between* layers mostly don't, and the core edge has never
+> been tested. Read this before trusting any capability claim further down.
+
+### Status by layer
+
+- **L1 — MCP servers (data): ✅ built & working.** 8 servers, 28/29 tools respond.
+- **L2 — Compute libs (math): ✅ built.** 19 deterministic libs with real logic; 27 unit
+  tests pass. (2 benign placeholders: `harness.py` model-cost, `discovery_filter.py` no-data.)
+- **L3 — Skills (playbooks): 🟡 written, seam-blind.** They call real MCP tools, but the
+  screening path (`theia-screen-token`, `theia-backtest`) never consults the knowledge base.
+- **L4 — Orchestration: 🔴 mostly unwired.** Harness never invoked in prod (`llm_shots`=0),
+  budget breaker never tracked (`budget_ledger`=0), task queue never used (`tasks`=0),
+  delegation unregistered + stubbed. (Cron token-burn fixed 2026-08-09.)
+
+### The seams are the work — not the boxes
+
+Every box exists; the arrows between them mostly don't. Unwired seams: knowledge→screening
+rule · harness→loop · budget→action · task→execution · delegate→subagent · note→decision.
+**These seams, not any single component, are the remaining work.** Unit tests (all 27 are
+component-level over synthetic data — none cross a seam) measure brick health, not whether
+the castle stands. Empty trading tables are the honest tell.
+
+### The one thing NOT proven: the edge
+
+Every trading table (`tokens`→`archives`) is empty; **no backtest has ever run.** Whether
+survival-screening yields `expectancy>0` net of costs is **unvalidated** — and it is the
+entire justification for this architecture. Per principle #5 (EARNED AUTONOMY), the rest has
+**not yet earned its complexity**; building it before validating the edge was the original
+design's root mistake.
+
+### Sequencing — validate before you build (the vertical slice)
+
+Build order = the rollout phases (see `CLAUDE.md` → *Rollout phases*). **Phase gate #1 is one
+working vertical slice, not "all files present":**
+
+```
+discover → screen (real GoPlus signal) → backtest on stored history → an expectancy number
+```
+
+Getting that single path to run end-to-end forces the wiring of every seam on it and answers
+the edge question. Parked pieces switch on **one phase at a time, only after** their gate.
+
+### Active now vs parked
+
+- **Active (Phase 1 — knowledge-first):** L1 MCP · L2 compute · `theia-learn` · `task_runner`
+  (0-LLM infra) · the Obsidian second brain.
+- **Parked until their phase:** discovery/screening (P2) · backtest/hypothesis (P3) ·
+  harness + budget breaker (P4) · paper-trade + monitor (P5) · subagent delegation (P6).
+  Their code/docs existing is **scaffolding — "not yet," not "broken."**
+
 ## The new goal
 
 1. **Learn Solana deeply first** — build a *second brain* (Obsidian, hosted on the server,
@@ -176,6 +230,11 @@ just shifts it to learning/backtesting until the window resets.
 
 ## Task runner — persistent queue with deps, retry, resume
 
+> **Status (2026-08-09): runner runs, queue unused, handlers stubbed — mostly Phase 6.** The
+> `task_runner.py` loop is real and now runs 0-LLM (`no_agent` cron), but `tasks`=0 (nothing
+> has ever enqueued a task) and every handler in `cron/task_runner.py` returns a placeholder.
+> `_handle_delegate` only flags "delegated to subagent queue" — no subagent is dispatched.
+
 The `tasks` table is the single source of truth for what Theia (and its subagents) must do.
 The runner is pure Python, no LLM. It is what makes parallel delegation, retry, and crash
 recovery possible.
@@ -207,6 +266,13 @@ recovery possible.
 The **harness** is a **deterministic supervisory wrapper** around the Hermes agent. The LLM
 *proposes*; the harness *verifies and gates*. It is what guarantees the agent runs *sesuai*
 — not drifting, not hallucinating. Four parts:
+
+> **Status (2026-08-09): built, NOT yet wired — Phase 4.** `compute/harness.py` exists and is
+> unit-tested, but it is not invoked in the live loop (`llm_shots`=0, `context_windows`=0,
+> `budget_ledger`=0). Its grounding check is regex/keyword — a fabricated URL passes as a
+> "source." The guarantees below are therefore **design intent, not current behavior**; today
+> the agent self-applies the discipline (notes do cite sources), which is not the same as
+> enforcement. Wire + harden this before it gates any money action.
 
 ```
   1. GROUNDING VERIFIER (anti-hallucination)
@@ -300,7 +366,12 @@ the bridge between the numeric and the prose halves.
 ## Subagent profiles
 
 Theia runs under Hermes profile **`theia`** (system prompt in `profile/IDENTITY.md`).
-Two specialized subagent profiles are registered for delegation:
+Two specialized subagent profiles are *defined* for delegation (prompt files in `profile/`):
+
+> **Status (2026-08-09): defined, NOT registered — Phase 6.** Only the `theia` profile is
+> registered in Hermes; `theia-batch-enricher` and `theia-builder` exist as prompt files but
+> are not wired as runnable profiles, and nothing dispatches to them (`_handle_delegate` is a
+> stub). Delegation is a Phase-6 capability, switched on only when serial throughput demands it.
 
 | Profile | Prompt File | Role | Model | Budget |
 |---------|-------------|------|-------|--------|

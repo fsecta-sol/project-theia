@@ -47,7 +47,7 @@ Every claim needs a **source** (docs URL, an on-chain tx, an API response) and m
 
 ### 3. Write sourced input (via theia-obsidian)
 - Use `theia-obsidian` to create or append to the vault inbox.
-  - If note does not exist: `theia-obsidian.write_note(path="00-Inbox/_knowledge/<topic-slug>.md", content=..., frontmatter={title, sources, tags})`
+   - If note does not exist: `theia-obsidian.write_note(path="00-Inbox/_knowledge/<topic-slug>.md", content=..., frontmatter={concept, type-hint, why-to-nail, sources, tags, note})` — **no `connects` field** (graph lives in `theia-store.knowledge_links`)
   - If note exists (red-string update): `theia-obsidian.append_to_note(path="00-Inbox/_knowledge/<topic-slug>.md", content=..., section="Related Concepts")`
 - Bullet the mechanism, the *why*, and cite sources.
 - Include a **"Related Concepts"** section listing red-string links discovered.
@@ -70,4 +70,9 @@ Every claim needs a **source** (docs URL, an on-chain tx, an API response) and m
 | add_knowledge_link | DB write (free) | per red string found |
 | get_knowledge_links | DB read (free) | per learn cycle |
 
-Escalate to the human when a mechanic materially changes a strategy assumption.
+When a mechanic materially changes a strategy assumption, escalate to the human via Telegram:
+```python
+# Escalation via Hermes native delivery (cron job deliver target is set to telegram thread)
+# The scheduler auto-delivers the full report; for urgent standalone pings use:
+# hermes send --to "telegram:-1003928226918:644" "🚨 Strategy assumption changed by {topic}"
+```
