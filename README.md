@@ -25,7 +25,7 @@
 ```
 L4  HERMES AGENT (profile "theia")
     ├─ orchestrates via skills
-    ├─ cron · subagents · FTS5 memory · execute_code · Telegram
+    ├─ cron · subagents · FTS5 memory · execute_code · Hermes channels
     └─ harness: grounding verifier + policy gate + budget breaker
 
 L3  SKILLS (playbooks — named, auditable procedures)
@@ -79,7 +79,7 @@ L0  INFRA
 ### Run Tests
 
 ```bash
-# All 53 golden tests (compute + MCP + obsidian + webscraper)
+# All 59 golden tests (33 compute + 26 MCP/obsidian/webscraper)
 python3 -m pytest compute/tests/ mcp/tests/test_mcp_servers.py \
   mcp/theia-obsidian/tests/test_obsidian.py \
   mcp/theia-webscraper/tests/test_webscraper.py -q
@@ -128,7 +128,7 @@ EVALUATE expectancy ──► ARCHIVE ──► refine / repeat
 | Directory | What |
 |-----------|------|
 | `mcp/` | 8 MCP servers + `common/theia_net.py` (shared cache/rotator) |
-| `compute/` | Deterministic libs + `tests/` (27 tests) |
+| `compute/` | Deterministic libs + `tests/` (33 tests) |
 | `skills/` | 12 skill playbooks (SKILL.md each) |
 | `profile/` | Hermes identity prompts (theia, batch-enricher, builder) |
 | `cron/` | Task runner + jobs schedule |

@@ -21,10 +21,10 @@ The single decision that matters. Win-rate is a milestone, never the verdict.
    - **keep-testing** → positive but thin/among-sample. Needs more forward data.
     - **reject** → fails the gate or doesn't beat random. Set `status='rejected'`, append the
       lesson to the vault inbox via `theia-obsidian.append_to_note(path="00-Inbox/_knowledge/hypothesis-lessons.md", content=..., section="<hypothesis-id>")` so the knowledge compounds.
- 5. Escalate a promotion to the human via Telegram before it changes any live behavior:
-    ```python
-    from compute.telegram_notify import hypothesis_promoted
-    hypothesis_promoted(hypothesis_id, expectancy, profit_factor, n_trades)
+ 5. Escalate a promotion to the human via Hermes channel before it changes any live behavior:
+    ```bash
+    hermes send --to "telegram:-1003928226918:644" \
+      "🏁 Hypothesis {hypothesis_id} promoted: expectancy={expectancy}, PF={profit_factor}, n={n_trades} — awaiting human approval"
     ```
     Human must approve before the hypothesis is enabled for live paper trading.
 

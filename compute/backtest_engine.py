@@ -120,7 +120,8 @@ def run(rule_spec: dict,
         screens: list[dict],
         pools: dict[str, dict] | None = None,
         wallet_signals: dict[str, list[dict]] | None = None,
-        detection_lag_sec: int = 30) -> dict:
+        detection_lag_sec: int = 30,
+        sol_usd: float = 150.0) -> dict:
     """Walk-forward backtest.
 
     Args:
@@ -132,6 +133,8 @@ def run(rule_spec: dict,
         pools: {mint: {graduation_status, ...}} — optional.
         wallet_signals: {wallet: [{mint, buy_ts}]} — optional.
         detection_lag_sec: seconds between signal detection and fill.
+        sol_usd: SOL/USD price — converts the SOL notional into USD for the
+            slippage-vs-liquidity model (costs.slippage_estimate is USD-based).
 
     Returns:
         dict with trade_pnls, metrics (expectancy), trades, counts.
@@ -148,6 +151,7 @@ def run(rule_spec: dict,
 
     trades: list[BacktestTrade] = []
     entered_mints: set[str] = set()
+    skipped_reserves_mints: set[str] = set()  # mints whose stored history lacks reserves
 
     size_rule = rule_spec.get("size", {})
     notional_default = size_rule.get("notional_sol", 0.5)
@@ -184,17 +188,13 @@ def run(rule_spec: dict,
             if liq > 0 and notional > liq * max_pct_liq:
                 continue
 
-            # Entry fill via AMM sim
+            # Entry fill via AMM sim. Reserves MUST be stored/derivable —
+            # we never fabricate them, so every simulated fill is reconstructable.
             base_r = fill_row.get("reserves_base", 0)
             quote_r = fill_row.get("reserves_quote", 0)
             if base_r <= 0 or quote_r <= 0:
-                # Fallback: backout rough reserves from price if missing
-                spot = fill_row.get("c", 0)
-                if spot <= 0:
-                    continue
-                # Rough approximation: assume $1000 quote reserve, derive base
-                quote_r = 1000.0
-                base_r = quote_r / spot
+                skipped_reserves_mints.add(mint)
+                continue
 
             entry_fill = amm_sim.buy_fill(notional, base_r, quote_r)
             entry_price = entry_fill["fill_price"]
@@ -216,11 +216,11 @@ def run(rule_spec: dict,
             n_exits = len(exit_result["exits"])
             gas_exit = gas_sim.swap_fee_sol() * max(1, n_exits)
 
-            # Conservative slippage penalty on exit
-            # Use costs model; assume bonding curve if amm_model != v2
+            # Conservative slippage penalty on exit.
+            # costs model is USD-denominated: trade size = SOL notional × SOL price.
             is_bonding = (fill_row.get("amm_model", "v2") != "v2")
             slip_pct = costs.slippage_estimate(
-                trade_size_usd=notional * entry_price,
+                trade_size_usd=notional * sol_usd,
                 liquidity_usd=max(liq, 100),
                 is_bonding_curve=is_bonding,
             )
@@ -260,6 +260,7 @@ def run(rule_spec: dict,
         "trades": [t.__dict__ for t in trades],
         "n_candidates": len(by_mint),
         "n_entered": len(trades),
+        "n_skipped_no_reserves": len(skipped_reserves_mints),
     }
 
 
@@ -270,4 +271,5 @@ def _empty_result() -> dict:
         "trades": [],
         "n_candidates": 0,
         "n_entered": 0,
+        "n_skipped_no_reserves": 0,
     }

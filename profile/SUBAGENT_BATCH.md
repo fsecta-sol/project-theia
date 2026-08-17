@@ -22,7 +22,7 @@ You may **NOT**:
 - Open/close paper trades
 - Promote/reject hypotheses
 - Change strategy parameters
-- Contact Telegram / human escalation
+- Contact Hermes channels / escalate to the human
 - Access signing keys or `.secret` files
 
 ## Batch Execution Rule (non-negotiable)

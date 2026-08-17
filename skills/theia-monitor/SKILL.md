@@ -17,10 +17,10 @@ the LLM never decides to hold/sell on a feeling.
    - liquidity drops sharply in one block (LP pull), sell-sim starts failing / effective tax↑,
      mint authority becomes active / supply jumps, or deployer/top-holder dumps.
    Re-screen via `theia-security.token_security` on suspicion.
-   - Immediately notify via Telegram:
-     ```python
-     from compute.telegram_notify import emergency_exit
-     emergency_exit(trade_id, mint, reason="LP pull / authority change", pnl=realized_pnl)
+   - Immediately notify via Hermes channel (URGENT — send before anything else):
+     ```bash
+     hermes send --to "telegram:-1003928226918:644" \
+       "🚨 EMERGENCY EXIT: {trade_id} ({mint}) | reason: LP pull / authority change | realized: {realized_pnl} SOL"
      ```
 4. On any exit: `theia-store.record_fill(kind='tp|stop|trail|time_stop|emergency', ...full
    snapshot...)`. When flat, hand to `theia-archive`.

@@ -19,10 +19,10 @@ The immutable ledger. Every closed trade must be fully reconstructable from stor
    closed result.
 5. If the trade revealed a new failure pattern (a rug type, a bad assumption):
    - Drop a sourced lesson into the vault inbox via `theia-obsidian.append_to_note(...)`.
-   - Notify the human via Telegram:
-     ```python
-     from compute.telegram_notify import notify
-     notify(f"New failure pattern detected in trade {trade_id}: {reason}", urgency="normal")
+   - Notify the human via Hermes channel:
+     ```bash
+     hermes send --to "telegram:-1003928226918:644" \
+       "🧵 New failure pattern detected in trade {trade_id}: {reason}"
      ```
 
 ## Guardrails

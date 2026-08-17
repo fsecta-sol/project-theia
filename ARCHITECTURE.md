@@ -18,7 +18,7 @@
 ### Status by layer
 
 - **L1 — MCP servers (data): ✅ built & working.** 8 servers, 28/29 tools respond.
-- **L2 — Compute libs (math): ✅ built.** 19 deterministic libs with real logic; 27 unit
+- **L2 — Compute libs (math): ✅ built.** 19 deterministic libs with real logic; 33 unit
   tests pass. (2 benign placeholders: `harness.py` model-cost, `discovery_filter.py` no-data.)
 - **L3 — Skills (playbooks): 🟡 written, seam-blind.** They call real MCP tools, but the
   screening path (`theia-screen-token`, `theia-backtest`) never consults the knowledge base.
@@ -30,7 +30,7 @@
 
 Every box exists; the arrows between them mostly don't. Unwired seams: knowledge→screening
 rule · harness→loop · budget→action · task→execution · delegate→subagent · note→decision.
-**These seams, not any single component, are the remaining work.** Unit tests (all 27 are
+**These seams, not any single component, are the remaining work.** Unit tests (all 33 are
 component-level over synthetic data — none cross a seam) measure brick health, not whether
 the castle stands. Empty trading tables are the honest tell.
 
@@ -83,7 +83,7 @@ the edge question. Parked pieces switch on **one phase at a time, only after** t
                         │           HERMES AGENT  —  profile "THEIA"            │
                         │  LLM role: orchestrate · sequence · judge qualitative │
                         │  native:  cron · subagents · FTS5 memory ·            │
-                        │           execute_code · Telegram interface           │
+                        │           execute_code · Hermes channels           │
                         └───────────────────────────┬───────────────────────────┘
                                                     │ fires DOWNWARD through Skills only
         ┌───────────────────────────────┬───────────┴───────────────┬───────────────────────────┐
@@ -230,10 +230,14 @@ just shifts it to learning/backtesting until the window resets.
 
 ## Task runner — persistent queue with deps, retry, resume
 
-> **Status (2026-08-09): runner runs, queue unused, handlers stubbed — mostly Phase 6.** The
-> `task_runner.py` loop is real and now runs 0-LLM (`no_agent` cron), but `tasks`=0 (nothing
-> has ever enqueued a task) and every handler in `cron/task_runner.py` returns a placeholder.
-> `_handle_delegate` only flags "delegated to subagent queue" — no subagent is dispatched.
+> **Status (updated 2026-08-17): runner runs, queue unused, handlers honest.** The
+> `task_runner.py` loop is real and runs 0-LLM (`no_agent` cron). Handlers are now honest:
+> `backtest` is a REAL API-free walk-forward backtest on stored history
+> (`compute.backtest_engine` → writes `backtests` row + updates hypothesis best_*);
+> MCP-bound types (`discover-screen`, `label-corpus`, `wallet-pnl-enrich`) return
+> `ok=false` with a clear "run via cron/agent" error instead of fake success; agent-only
+> types (`monitor`, `delegate`) are left 'ready' for the agent — never executed here.
+> `tasks`=0 still (nothing has ever enqueued a task) — the queue awaits Phase 2.
 
 The `tasks` table is the single source of truth for what Theia (and its subagents) must do.
 The runner is pure Python, no LLM. It is what makes parallel delegation, retry, and crash
@@ -283,7 +287,7 @@ The **harness** is a **deterministic supervisory wrapper** around the Hermes age
   2. POLICY GATE (on-task + safe)
      · before any consequential action (open/close paper trade, promote a hypothesis,
        change a param) a deterministic policy returns ALLOW / DENY / ESCALATE — logged
-     · edge cases go to the human (Telegram), never guessed
+     · edge cases go to the human (Hermes channel), never guessed
   3. WATCHDOG (liveness)
      · agent writes a heartbeat each loop; external watchdog restarts on crash/hang
      · on boot the reconciler rebuilds state FROM THE DB (never from memory) and resumes

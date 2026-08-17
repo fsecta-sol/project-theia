@@ -107,7 +107,7 @@ theia-store.set_state(f"delegate:{task_id}", json.dumps({
 ## Hermes capabilities (confirmed)
 
 From ARCHITECTURE.md v2:
-- Hermes native: `cron` · `subagents` · `FTS5 memory` · `execute_code` · `Telegram interface`
+- Hermes native: `cron` · `subagents` · `FTS5 memory` · `execute_code` · `Hermes channels`
 - Subagents are first-class — can run scoped tasks with their own context windows
 - `execute_code` runs deterministic Python (compute libs) without LLM invocation
 - Theia's harness stores context in SQLite, not in Hermes memory, so subagents can
@@ -201,7 +201,7 @@ to ~15 minutes.
    - **Cached price history** (`theia-store.get_price_path` per pool)
    - **Screen results** (`theia-store.get_latest_screen` per mint)
    - **Compute libs** imported via `execute_code` (deterministic, no LLM)
-   - **NO access to:** open paper trades, Telegram, budget ledger, other hypotheses' private data
+   - **NO access to:** open paper trades, Hermes channels (no notifications), budget ledger, other hypotheses' private data
 
 4. **Subagent executes deterministically:**
    ```python

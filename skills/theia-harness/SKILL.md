@@ -18,7 +18,7 @@ Theia runs sesuai — not drifting, not hallucinating — by verifying and gatin
 
 2. POLICY GATE (on-task + safe)
    · before any consequential action returns ALLOW / DENY / ESCALATE
-   · edge cases go to human (Telegram), never guessed
+   · edge cases go to human (Hermes channel), never guessed
 
 3. CONTEXT WINDOW TRACKER (token budget)
    · stores every shot in the DB (llm_shots) with full inputs/outputs/policy
@@ -72,14 +72,10 @@ Theia runs sesuai — not drifting, not hallucinating — by verifying and gatin
    - **ALLOW** → proceed with the skill's normal flow.
    - **DENY** → discard LLM output, log the rejection, retry with tighter prompt OR
      escalate to human if repeated.
-   - **ESCALATE** → pause, send alert via `compute.telegram_notify` with full shot details, wait for human:
-     ```python
-     from compute.telegram_notify import notify
-     notify(
-         f"ESCALATE: skill={skill} | reason={policy_reason} | shot_id={shot_id}\n"
-         f"Review llm_shots table for full context.",
-         urgency="high"
-     )
+   - **ESCALATE** → pause, send alert via Hermes channel with full shot details, wait for human:
+     ```bash
+     hermes send --to "telegram:-1003928226918:644" \
+       "⚠️ ESCALATE: skill={skill} | reason={policy_reason} | shot_id={shot_id} — review llm_shots for full context"
      ```
 
 7. Record the shot:

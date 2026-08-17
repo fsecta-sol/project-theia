@@ -74,60 +74,139 @@ def _all_deps_done(conn: sqlite3.Connection, deps: list[str]) -> bool:
 
 # ── Task execution registry ──────────────────────────────────────────────────
 
+# Task types that only the Hermes agent (LLM + MCP skills) can execute.
+# The runner must NEVER claim to run them — they stay 'ready' in the queue
+# until the agent picks them up (theia-monitor cron, delegation, ...).
+_AGENT_HANDLED_TASKS = {"monitor", "delegate"}
+
 
 def _handle_discover_screen(task: dict) -> dict:
-    """Placeholder: discovery + screening batch.
-    In production this calls theia-dexdata + theia-security in a loop.
-    Returns result metadata."""
-    payload = task["payload"]
+    """Not runnable here: discovery + screening needs live theia-dexdata +
+    theia-security MCP calls (rate-limit/cache live at the MCP boundary).
+    Run it via the theia-discover-screen cron job instead."""
     return {
-        "ok": True,
-        "processed": payload.get("batch_size", 0),
-        "note": "discovery-screen batch completed",
+        "ok": False,
+        "error": "discover-screen requires MCP calls (theia-dexdata/theia-security); "
+                 "run via the theia-discover-screen cron job, not the task runner",
     }
 
 
 def _handle_backtest(task: dict) -> dict:
-    """Placeholder: run backtest_engine on stored history.
-    In production this imports compute.backtest_engine and runs it."""
+    """REAL API-free walk-forward backtest on stored history (no LLM, no API).
+
+    payload: {hypothesis_id}. Loads the hypothesis rule_spec, the stored
+    price_snapshots_v2 path + screens + graduation labels, runs
+    compute.backtest_engine.run(), records a `backtests` row, and updates
+    the hypothesis best_* metrics. Fails honestly when data is missing.
+    """
     payload = task["payload"]
-    return {
-        "ok": True,
-        "hypothesis_id": payload.get("hypothesis_id"),
-        "note": "backtest completed (placeholder)",
-    }
+    hyp_id = payload.get("hypothesis_id")
+    if not hyp_id:
+        return {"ok": False, "error": "payload.hypothesis_id missing"}
+
+    conn = _conn()
+    try:
+        row = conn.execute(
+            "SELECT rule_spec FROM hypotheses WHERE id=?", (hyp_id,)
+        ).fetchone()
+        if row is None:
+            return {"ok": False, "error": f"hypothesis {hyp_id} not found"}
+        rule_spec = json.loads(row["rule_spec"] or "{}")
+        if not rule_spec.get("entry"):
+            return {"ok": False,
+                    "error": f"hypothesis {hyp_id} has no entry rule_spec — not testable yet"}
+
+        price_rows = [dict(r) for r in conn.execute(
+            "SELECT mint, ts, price_sol, price_usd, volume_24h, liquidity_usd "
+            "FROM price_snapshots_v2 ORDER BY mint, ts")]
+        if not price_rows:
+            return {"ok": False,
+                    "error": "price_snapshots_v2 is empty — collect discovery/enrichment "
+                             "data first; nothing to backtest"}
+        for r in price_rows:
+            r["c"] = r.get("price_sol") or 0.0  # o/h/l fall back to c in the engine
+
+        screens = [dict(r) for r in conn.execute(
+            "SELECT mint, screen_ts, verdict FROM screens")]
+        pools = {r["mint"]: {"graduation_status": r["graduation_status"]}
+                 for r in conn.execute(
+                     "SELECT mint, graduation_status FROM token_corpus")}
+
+        from compute import backtest_engine  # local import: keep runner boot light
+        result = backtest_engine.run(rule_spec, price_rows, screens, pools=pools)
+        m = result["metrics"]
+
+        bt_id = f"BT-{hyp_id}-{_now()}"
+        ts_list = [r["ts"] for r in price_rows]
+        pf = m["profit_factor"] if m["profit_factor"] != float("inf") else None
+        conn.execute(
+            """INSERT INTO backtests(id, hypothesis_id, window_start, window_end,
+               params, n_trades, expectancy, profit_factor, win_rate, max_dd, ran_ts)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+            (bt_id, hyp_id, min(ts_list), max(ts_list), json.dumps(rule_spec),
+             m["n"], m["expectancy"], pf, m["win_rate"], m["max_drawdown"], _now()),
+        )
+        cur = conn.execute(
+            "SELECT best_expectancy, best_pf, best_winrate FROM hypotheses WHERE id=?",
+            (hyp_id,),
+        ).fetchone()
+        pf_candidates = [x for x in (cur["best_pf"], pf) if x is not None]
+        conn.execute(
+            "UPDATE hypotheses SET best_expectancy=?, best_pf=?, best_winrate=? WHERE id=?",
+            (max(cur["best_expectancy"] if cur["best_expectancy"] is not None else -1e18,
+                 m["expectancy"]),
+             max(pf_candidates) if pf_candidates else None,
+             max(cur["best_winrate"] or 0.0, m["win_rate"]),
+             hyp_id),
+        )
+        conn.commit()
+
+        note = "API-free backtest on stored history (compute.backtest_engine)"
+        if result["n_skipped_no_reserves"]:
+            note += (f"; {result['n_skipped_no_reserves']} candidate(s) skipped — "
+                     "stored history lacks reserves snapshots, so no AMM fill is simulatable")
+        return {
+            "ok": True,
+            "hypothesis_id": hyp_id,
+            "backtest_id": bt_id,
+            "n_candidates": result["n_candidates"],
+            "n_entered": result["n_entered"],
+            "n_skipped_no_reserves": result["n_skipped_no_reserves"],
+            "expectancy": m["expectancy"],
+            "profit_factor": pf,
+            "win_rate": m["win_rate"],
+            "passes": m["passes"],
+            "note": note,
+        }
+    finally:
+        conn.close()
 
 
 def _handle_wallet_pnl_enrich(task: dict) -> dict:
-    """Placeholder: batch wallet PnL enrichment.
-    In production this loops wallet_pnl() inside execute_code."""
-    payload = task["payload"]
-    wallets = payload.get("wallets", [])
+    """Not runnable here: batch wallet PnL enrichment needs theia-chainrpc MCP
+    calls. Run it via the agent (execute_code batch) or a dedicated cron job."""
     return {
-        "ok": True,
-        "wallets_processed": len(wallets),
-        "note": "wallet batch enrichment completed",
+        "ok": False,
+        "error": "wallet-pnl-enrich requires MCP calls (theia-chainrpc); "
+                 "run via the agent's execute_code batch pattern, not the task runner",
     }
 
 
 def _handle_label_corpus(task: dict) -> dict:
-    """Placeholder: label graduated/dead tokens."""
-    return {"ok": True, "note": "label corpus completed"}
-
-
-def _handle_delegate(task: dict) -> dict:
-    """Generic delegate — subagent picks this up separately."""
-    return {"ok": True, "note": "delegated to subagent queue"}
+    """Not runnable here: graduation/death labeling needs theia-dexdata pairs
+    (live MCP calls). Run it via the theia-label-corpus cron job instead."""
+    return {
+        "ok": False,
+        "error": "label-corpus requires MCP calls (theia-dexdata); "
+                 "run via the theia-label-corpus cron job, not the task runner",
+    }
 
 
 def _handle_execute_code(task: dict) -> dict:
-    """Run deterministic compute in-process."""
-    payload = task["payload"]
-    return {
-        "ok": True,
-        "task": payload.get("task"),
-        "note": "execute_code completed (placeholder)",
-    }
+    """No-op ack job (queue mechanics only). Real deterministic compute lives
+    in dedicated handlers (e.g. backtest) — never exec arbitrary payloads."""
+    return {"ok": True, "task": task["payload"].get("task"),
+            "note": "noop ack (queue-mechanics job)"}
 
 
 _HANDLERS = {
@@ -135,7 +214,6 @@ _HANDLERS = {
     "backtest": _handle_backtest,
     "wallet-pnl-enrich": _handle_wallet_pnl_enrich,
     "label-corpus": _handle_label_corpus,
-    "delegate": _handle_delegate,
     "execute_code": _handle_execute_code,
 }
 
@@ -169,12 +247,16 @@ def poll_and_run(limit: int = 1) -> list[dict]:
             )
     conn.commit()
 
-    # 2. Fetch ready tasks ordered by updated_ts (oldest first)
+    # 2. Fetch ready tasks ordered by updated_ts (oldest first).
+    #    Agent-handled task types (monitor/delegate) are EXCLUDED: the runner
+    #    leaves them 'ready' so the Hermes agent / cron picks them up —
+    #    executing them here would fake work only an agent can do.
     cur = conn.execute(
         "SELECT * FROM tasks WHERE state='ready' ORDER BY updated_ts ASC LIMIT ?",
         (limit,),
     )
-    ready_tasks = [_task_from_row(r) for r in cur.fetchall()]
+    ready_tasks = [t for t in (_task_from_row(r) for r in cur.fetchall())
+                   if t["type"] not in _AGENT_HANDLED_TASKS]
 
     for task in ready_tasks:
         # Verify deps still satisfied (race condition guard)

@@ -50,4 +50,4 @@ stops + exits run 24/7 without emotion), selectivity (ignore 99% of tokens), slo
 ## Escalate (don't act silently)
 
 New rug/failure patterns, a hypothesis that clears the expectancy gate out-of-sample, any
-data-source outage, or any principle/guardrail conflict → surface to the human (Telegram).
+data-source outage, or any principle/guardrail conflict → surface to the human via the Hermes channel.

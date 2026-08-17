@@ -70,7 +70,7 @@ Every claim needs a **source** (docs URL, an on-chain tx, an API response) and m
 | add_knowledge_link | DB write (free) | per red string found |
 | get_knowledge_links | DB read (free) | per learn cycle |
 
-When a mechanic materially changes a strategy assumption, escalate to the human via Telegram:
+When a mechanic materially changes a strategy assumption, escalate to the human via the Hermes channel:
 ```python
 # Escalation via Hermes native delivery (cron job deliver target is set to telegram thread)
 # The scheduler auto-delivers the full report; for urgent standalone pings use:
