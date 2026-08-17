@@ -115,6 +115,18 @@
       "enabled": true,
       "state": "scheduled",
       "script": "theia-wallet-report.sh"
+    },
+    {
+      "id": "theia-wallet-discovery",
+      "name": "theia-wallet-discovery",
+      "prompt": "Scrape GMGN leaderboard (winrate+pnl), profile new wallet candidates with latency-tolerance gate (train/test split n>=20), prune stale tracked wallets (no activity 14d).",
+      "skills": [],
+      "skill": "",
+      "schedule": {"kind": "cron", "expr": "0 */6 * * *", "display": "every 6h — wallet discovery + revalidation"},
+      "enabled": true,
+      "state": "scheduled",
+      "no_agent": true,
+      "script": "theia-wallet-discovery.sh"
     }
   ]
 }

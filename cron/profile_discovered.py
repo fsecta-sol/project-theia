@@ -146,7 +146,7 @@ for w in todo:
     # Fix #5: smart money only on out-of-sample PASS with sufficient n
     is_sm = 1 if (lt and lt.get("expectancy", 0) > 0 and lt.get("n", 0) >= MIN_TEST_N) else 0
     marker = "★ LATENCY-TOLERANT" if is_sm else ""
-    print(f"  {w[:12]}: profile_exp={p.get('expectancy_sol',0):+.3f} "
+    print(f"  {w[:12]}: profile_exp={(p.get('expectancy_sol') or 0):+.3f} "
           f"train_n={lt.get('train_n',0)} test_n={lt.get('n',0)} "
           f"test_exp={lt.get('expectancy',0):+.4f} {marker}")
 
