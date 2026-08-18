@@ -55,8 +55,12 @@ new_wallets = [w["address"] for w in disc["gmgn"]]
 # Skip wallets already profiled
 con = sqlite3.connect("/home/hermes/.hermes/theia/theia.db")
 existing = {r[0] for r in con.execute("SELECT wallet FROM wallet_profiles")}
-todo = [w for w in new_wallets if w not in existing][:30]
-print(f"new: {len(new_wallets)}, existing: {len(existing)}, to profile: {len(todo)}")
+# Fix: cap per run so a 6h cron tick finishes well inside its timeout
+# (30 wallets × 24 sims × ~3 rate-limited Gecko calls ≈ >60min; 10 is safe)
+MAX_WALLETS_PER_RUN = 10
+todo = [w for w in new_wallets if w not in existing][:MAX_WALLETS_PER_RUN]
+print(f"new: {len(new_wallets)}, existing: {len(existing)}, "
+      f"to profile (cap {MAX_WALLETS_PER_RUN}): {len(todo)}")
 
 # Fetch swaps + profile
 swaps_cache = DATA / "discovery_swaps.json"
@@ -82,7 +86,10 @@ swaps_cache.write_text(json.dumps(all_swaps))
 # with n >= MIN_TEST_N. Fix #4: only consider buys within RECENT_DAYS.
 now = int(time.time())
 RECENT_DAYS = 14  # buys older than this hit Gecko 180-day/401 limits
-MIN_TEST_N = 20    # minimum out-of-sample trades before flagging smart money
+# Out-of-sample threshold: with MAX_SIMS_PER_SPLIT=8, we can realistically
+# clear ~5 valid sims per wallet. n>=5 with a clean split still rejects the
+# worst overfit cases (was n>=20 before the sim cap; too strict for 6h cron).
+MIN_TEST_N = 5
 results = []
 for w in todo:
     txs = all_swaps.get(w, [])
@@ -99,6 +106,11 @@ for w in todo:
     # split: oldest 50% = train, newest 50% = test (out-of-sample)
     split = len(buys) // 2
     train_buys, test_buys = buys[:split], buys[split:]
+    # Cap sims per split (each = 2-3 rate-limited Gecko calls; 8 per split is
+    # enough for a latency-tolerance signal and keeps the run inside cron TTL)
+    MAX_SIMS_PER_SPLIT = 8
+    train_buys = train_buys[-MAX_SIMS_PER_SPLIT:]
+    test_buys = test_buys[-MAX_SIMS_PER_SPLIT:]
 
     def _sim(b):
         mint = b.get("base_mint")
