@@ -50,6 +50,7 @@ script_lock = wc.script_lock
 parallel_map = wc.parallel_map
 
 from compute import costs, gas_sim  # noqa: E402
+from compute.paper_ledger import LedgerIntegrityError, open_trade_with_entry_fill  # noqa: E402
 
 WSOL = "So11111111111111111111111111111111111111112"
 NOTIONAL = 0.5
@@ -217,18 +218,48 @@ with script_lock("wallet_pipeline"):
         slip = costs.slippage_estimate(NOTIONAL * usd, max(liq, 100), is_bonding)
         entry_gas = gas_sim.swap_fee_sol(first_buy=True)
         entry_price_sol = (info.get("price_usd") or 0) / usd if usd else 0
+        if entry_price_sol <= 0:
+            con.execute("UPDATE wallet_signals SET our_action='skip_missing_entry_price' WHERE id=?",
+                        (sig["sig"],))
+            continue
+        entry_qty = NOTIONAL / entry_price_sol
         stop_price = entry_price_sol * 0.65
 
-        con.execute("""
-            INSERT OR IGNORE INTO paper_trades
-            (trade_id, mint, hypothesis_id, state, entry_ts, entry_price, size_sol,
-             stop_price, tp_ladder, opened_by)
-            VALUES (?,?,?,?,?,?,?,?,?,?)
-        """, (trade_id, mint, HYP_ID, "open", now, entry_price_sol, NOTIONAL,
-              stop_price, json.dumps([{"target": 2.0, "pct": 0.5}, {"target": 4.0, "pct": 0.5}]),
-              json.dumps({"kind": "wallet_pipeline", "wallet": sig["wallet"],
-                          "liq_usd": liq, "gas_sol": entry_gas,
-                          "slippage_sol": NOTIONAL * costs.slippage_estimate(NOTIONAL * usd, max(liq, 100), is_bonding)})))
+        try:
+            open_trade_with_entry_fill(
+                con,
+                trade_id=trade_id,
+                mint=mint,
+                hypothesis_id=HYP_ID,
+                entry_ts=now,
+                entry_price=entry_price_sol,
+                size_sol=NOTIONAL,
+                stop_price=stop_price,
+                tp_ladder=[{"target": 2.0, "pct": 0.5}, {"target": 4.0, "pct": 0.5}],
+                opened_by={"kind": "wallet_pipeline", "wallet": sig["wallet"],
+                           "liq_usd": liq, "gas_sol": entry_gas,
+                           "slippage_sol": NOTIONAL * slip},
+                entry_fill={
+                    "seq": 0, "kind": "entry", "ts": now, "qty": entry_qty,
+                    "price": entry_price_sol,
+                    # Current pool/spot responses do not expose reserves. Keep
+                    # NULL and let the archive writer mark the trade degraded.
+                    "reserves_base": info.get("reserves_base"),
+                    "reserves_quote": info.get("reserves_quote"),
+                    "base_fee": info.get("base_fee", 0),
+                    "priority_fee": info.get("priority_fee", 0),
+                    "native_usd": usd,
+                    "gas_sol": entry_gas,
+                    "slippage": NOTIONAL * slip,
+                    "amm_model": info.get("amm_model") or "unknown",
+                },
+            )
+        except LedgerIntegrityError as exc:
+            con.execute("UPDATE wallet_signals SET our_action='entry_ledger_error' WHERE id=?",
+                        (sig["sig"],))
+            print(f"[trade] {mint[:12]} entry ledger error: {exc}")
+            continue
+
         con.execute("UPDATE wallet_signals SET our_action='paper_traded', our_entry_ts=? WHERE id=?",
                     (now, sig["sig"]))
         opened += 1

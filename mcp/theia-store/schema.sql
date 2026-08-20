@@ -95,8 +95,22 @@ CREATE TABLE IF NOT EXISTS archives (
   entry_ts INTEGER, exit_ts INTEGER, hold_secs INTEGER,
   realized_pnl_sol REAL, roi REAL, expectancy_contrib REAL,
   gas_sol_total REAL, slippage_total REAL,
-  exit_reason TEXT, created_ts INTEGER
-);
+ exit_reason TEXT, created_ts INTEGER,
+ reconstructable INTEGER NOT NULL DEFAULT 0,
+ integrity_error TEXT
+ );
+
+ CREATE TRIGGER IF NOT EXISTS archives_immutable_update
+ BEFORE UPDATE ON archives
+ BEGIN
+ SELECT RAISE(ABORT, 'archives are immutable');
+ END;
+
+ CREATE TRIGGER IF NOT EXISTS archives_immutable_delete
+ BEFORE DELETE ON archives
+ BEGIN
+ SELECT RAISE(ABORT, 'archives are append-only');
+ END;
 
 -- mirror of the second-brain notes (prose stays in Obsidian) -----------------
 CREATE TABLE IF NOT EXISTS knowledge_index (

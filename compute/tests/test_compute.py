@@ -51,10 +51,12 @@ def _row(ts, o, h, l, c):
 def test_exit_ladder_and_stop():
     r = exit_engine.simulate_exit(1.0, 0, [_row(60, 1, 1, 0.5, 0.5)])
     assert r["final_reason"] == "hard_stop" and math.isclose(r["realized_price"], 0.65)
+    assert r["exit_ts"] == 60
     path = [_row(60, 1, 2.5, 1, 2.5), _row(120, 2.5, 5, 2.5, 5), _row(180, 5, 5, 3, 3)]
     r2 = exit_engine.simulate_exit(1.0, 0, path, {"time_stop_secs": 10**9})
     reasons = [e[2] for e in r2["exits"]]
     assert "tp_2x" in reasons and "tp_4x" in reasons and "trail" in reasons
+    assert r2["exit_ts"] == 120
     assert math.isclose(r2["realized_price"], 2.9375, rel_tol=1e-9)
 
 

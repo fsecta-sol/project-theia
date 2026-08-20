@@ -11,10 +11,21 @@ import json
 import os
 import re
 import sqlite3
+import sys
 import time
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from compute.paper_ledger import (  # noqa: E402
+    LedgerIntegrityError,
+    close_trade_with_fills,
+    open_trade_with_entry_fill,
+    record_fill as append_fill,
+)
 
 DB_PATH = os.environ.get("THEIA_DB", str(Path.home() / ".hermes" / "theia" / "theia.db"))
 SCHEMA = Path(__file__).parent / "schema.sql"
@@ -37,6 +48,8 @@ def _init() -> None:
     # statements, then split and execute individually so ALTER TABLE failures
     # (e.g. duplicate column) are idempotent rather than fatal.
     clean = re.sub(r"--.*", "", schema)
+    clean = re.sub(r"CREATE TRIGGER IF NOT EXISTS archives_immutable_update.*?END;", "", clean, flags=re.S)
+    clean = re.sub(r"CREATE TRIGGER IF NOT EXISTS archives_immutable_delete.*?END;", "", clean, flags=re.S)
     for stmt in clean.split(";"):
         stmt = stmt.strip()
         if not stmt or stmt.startswith("PRAGMA"):
@@ -50,6 +63,29 @@ def _init() -> None:
                 pass
             else:
                 raise
+    archive_columns = {row[1] for row in c.execute("PRAGMA table_info(archives)")}
+    if "reconstructable" not in archive_columns:
+        c.execute("ALTER TABLE archives ADD COLUMN reconstructable INTEGER NOT NULL DEFAULT 0")
+    if "integrity_error" not in archive_columns:
+        c.execute("ALTER TABLE archives ADD COLUMN integrity_error TEXT")
+    c.execute("""UPDATE archives
+                   SET reconstructable=0,
+                       integrity_error=COALESCE(integrity_error, 'missing_trade_fills')
+                   WHERE NOT EXISTS (
+                       SELECT 1 FROM trade_fills f
+                       WHERE f.trade_id=archives.trade_id AND f.kind='entry'
+                   ) OR NOT EXISTS (
+                       SELECT 1 FROM trade_fills f
+                       WHERE f.trade_id=archives.trade_id AND f.kind!='entry'
+                   )""")
+    c.execute("""CREATE TRIGGER IF NOT EXISTS archives_immutable_update
+                   BEFORE UPDATE ON archives BEGIN
+                     SELECT RAISE(ABORT, 'archives are immutable');
+                   END""")
+    c.execute("""CREATE TRIGGER IF NOT EXISTS archives_immutable_delete
+                   BEFORE DELETE ON archives BEGIN
+                     SELECT RAISE(ABORT, 'archives are append-only');
+                   END""")
     c.commit()
     c.close()
 
@@ -197,52 +233,56 @@ def record_backtest(id: str, hypothesis_id: str, window_start: int, window_end: 
 @mcp.tool()
 def open_paper_trade(trade_id: str, mint: str, hypothesis_id: str, entry_ts: int,
                      entry_price: float, size_sol: float, stop_price: float = 0,
-                     tp_ladder: list | None = None, opened_by: dict | None = None) -> dict:
+                     tp_ladder: list | None = None, opened_by: dict | None = None,
+                     entry_fill: dict | None = None) -> dict:
+    """Create a paper trade and its sequence-0 entry fill atomically."""
+    if entry_fill is None:
+        raise LedgerIntegrityError("new paper trades require an entry fill")
     c = _conn()
-    c.execute("""INSERT INTO paper_trades(trade_id,mint,hypothesis_id,state,entry_ts,
-                   entry_price,size_sol,stop_price,tp_ladder,opened_by)
-                 VALUES(?,?,?,'open',?,?,?,?,?,?)""",
-              (trade_id, mint, hypothesis_id, entry_ts, entry_price, size_sol, stop_price,
-               json.dumps(tp_ladder or []), json.dumps(opened_by or {})))
-    c.commit(); c.close()
-    return {"ok": True, "trade_id": trade_id}
+    try:
+        return open_trade_with_entry_fill(
+            c, trade_id=trade_id, mint=mint, hypothesis_id=hypothesis_id,
+            entry_ts=entry_ts, entry_price=entry_price, size_sol=size_sol,
+            stop_price=stop_price, tp_ladder=tp_ladder, opened_by=opened_by,
+            entry_fill=entry_fill,
+        )
+    finally:
+        c.close()
 
 
 @mcp.tool()
 def record_fill(trade_id: str, seq: int, kind: str, ts: int, qty: float, price: float,
-                reserves_base: float = 0, reserves_quote: float = 0, base_fee: float = 0,
-                priority_fee: float = 0, native_usd: float = 0, gas_sol: float = 0,
-                slippage: float = 0, amm_model: str = "v2") -> dict:
-    """Record one fill with the full snapshot needed to re-derive PnL/gas/slippage."""
+                reserves_base: float | None = None, reserves_quote: float | None = None,
+                base_fee: float = 0, priority_fee: float = 0, native_usd: float = 0,
+                gas_sol: float = 0, slippage: float = 0, amm_model: str = "v2") -> dict:
+    """Append one fill; an existing sequence can never be replaced."""
     c = _conn()
-    c.execute("""INSERT OR REPLACE INTO trade_fills(trade_id,seq,kind,ts,qty,price,
-                   reserves_base,reserves_quote,base_fee,priority_fee,native_usd,gas_sol,
-                   slippage,amm_model) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-              (trade_id, seq, kind, ts, qty, price, reserves_base, reserves_quote, base_fee,
-               priority_fee, native_usd, gas_sol, slippage, amm_model))
-    c.commit(); c.close()
-    return {"ok": True, "trade_id": trade_id, "seq": seq}
+    try:
+        return append_fill(c, trade_id, {
+            "seq": seq, "kind": kind, "ts": ts, "qty": qty, "price": price,
+            "reserves_base": reserves_base, "reserves_quote": reserves_quote,
+            "base_fee": base_fee, "priority_fee": priority_fee, "native_usd": native_usd,
+            "gas_sol": gas_sol, "slippage": slippage, "amm_model": amm_model,
+        })
+    finally:
+        c.close()
 
 
 @mcp.tool()
 def close_trade(trade_id: str, exit_ts: int, realized_pnl_sol: float, roi: float,
                 expectancy_contrib: float, gas_sol_total: float, slippage_total: float,
-                exit_reason: str) -> dict:
-    """Mark a paper trade archived and write the immutable ledger row."""
+                exit_reason: str, exit_fills: list[dict] | None = None) -> dict:
+    """Append exit fills and archive atomically; archives are immutable."""
     c = _conn()
-    r = c.execute("SELECT entry_ts,mint,hypothesis_id FROM paper_trades WHERE trade_id=?",
-                  (trade_id,)).fetchone()
-    entry_ts = r["entry_ts"] if r else 0
-    c.execute("""INSERT OR IGNORE INTO archives(trade_id,mint,hypothesis_id,entry_ts,exit_ts,
-                   hold_secs,realized_pnl_sol,roi,expectancy_contrib,gas_sol_total,
-                   slippage_total,exit_reason,created_ts)
-                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-              (trade_id, r["mint"] if r else "", r["hypothesis_id"] if r else "", entry_ts,
-               exit_ts, max(0, exit_ts - entry_ts), realized_pnl_sol, roi, expectancy_contrib,
-               gas_sol_total, slippage_total, exit_reason, _now()))
-    c.execute("UPDATE paper_trades SET state='archived' WHERE trade_id=?", (trade_id,))
-    c.commit(); c.close()
-    return {"ok": True, "trade_id": trade_id}
+    try:
+        return close_trade_with_fills(
+            c, trade_id, exit_fills or [], exit_ts=exit_ts,
+            realized_pnl_sol=realized_pnl_sol, roi=roi,
+            expectancy_contrib=expectancy_contrib, gas_sol_total=gas_sol_total,
+            slippage_total=slippage_total, exit_reason=exit_reason,
+        )
+    finally:
+        c.close()
 
 
 @mcp.tool()
