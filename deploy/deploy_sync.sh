@@ -24,9 +24,11 @@ SCRIPTS=(
   discover_wallets.py
   profile_discovered.py
   backtest_cluster.py
+  pipeline_health.py
 )
 
-# Wrappers (generated): pipeline -> v3, monitor -> v2, report -> v2
+# Wrappers (generated): pipeline -> v3, monitor -> v2, report -> v2,
+# pipeline health -> stdlib-only watchdog
 gen_wrapper() {  # $1 = name  $2 = py target  $3 = py absolute path
   cat <<EOF
 #!/bin/bash
@@ -58,7 +60,8 @@ done
 for pair in "theia-wallet-pipeline.sh:wallet_pipeline_v3.py" \
             "theia-wallet-monitor.sh:wallet_monitor_v2.py" \
             "theia-wallet-report.sh:wallet_report_v2.py" \
-            "theia-wallet-discovery.sh:wallet_discovery_run.py"; do
+            "theia-wallet-discovery.sh:wallet_discovery_run.py" \
+            "theia-pipeline-health.sh:pipeline_health.py"; do
   sh_name="${pair%%:*}"; py_name="${pair##*:}"
   tmp="$(mktemp)"
   gen_wrapper "$sh_name" "$py_name" "$PROFILE_SCRIPTS/$py_name" > "$tmp"

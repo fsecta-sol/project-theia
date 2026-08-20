@@ -127,6 +127,18 @@
       "state": "scheduled",
       "no_agent": true,
       "script": "theia-wallet-discovery.sh"
+    },
+    {
+      "id": "theia-pipeline-health",
+      "name": "theia-pipeline-health",
+      "prompt": "Run the read-only pipeline health watchdog and print its health report. Do not modify runtime state or deliver anything beyond normal cron output.",
+      "skills": [],
+      "skill": "",
+      "schedule": {"kind": "cron", "expr": "*/5 * * * *", "display": "every 5 min — read-only pipeline health watchdog"},
+      "enabled": true,
+      "state": "scheduled",
+      "no_agent": true,
+      "script": "theia-pipeline-health.sh"
     }
   ]
 }
