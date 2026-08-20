@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sqlite3
 import sys
 import tempfile
@@ -91,6 +92,61 @@ class PipelineHealthTests(unittest.TestCase):
             self.assertEqual(report.overall, "OK")
             self.assertTrue(all(item.status == "OK" for item in report.jobs))
             self.assertTrue(all("OK" in line for line in report.summary.splitlines()))
+
+    def test_hashed_runtime_ids_are_mapped_to_logical_jobs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            db = root / "executions.db"
+            scripts = root / "scripts"
+            scripts.mkdir()
+            for job_id in JOB_IDS:
+                wrapper = scripts / f"{job_id}.sh"
+                wrapper.write_text("#!/bin/sh\n", encoding="utf-8")
+                wrapper.chmod(0o755)
+
+            runtime_ids = {
+                "theia-wallet-pipeline": "694ffa3df0e7",
+                "theia-wallet-monitor": "28c5d95779e8",
+                "theia-wallet-discovery": "30fd31a1ac9e",
+                "theia-wallet-report": "50ca006ad719",
+            }
+            jobs_config = root / "jobs.json"
+            jobs_config.write_text(
+                json.dumps(
+                    {
+                        "jobs": [
+                            {"id": runtime_id, "name": job_id, "script": f"{job_id}.sh"}
+                            for job_id, runtime_id in runtime_ids.items()
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            finished = "2025-08-20T04:00:00+00:00"
+            rows = [
+                (str(index), runtime_id, "completed", finished, finished, finished)
+                for index, runtime_id in enumerate(runtime_ids.values())
+            ]
+            make_execution_db(db, rows)
+
+            report = check_health(
+                db_path=db,
+                scripts_dir=scripts,
+                now=NOW,
+                thresholds={job_id: 120 for job_id in JOB_IDS},
+                jobs_config_path=jobs_config,
+            )
+
+            self.assertEqual(report.overall, "ALERT")
+            self.assertTrue(
+                all(
+                    item.source == "executions"
+                    and item.execution_status == "completed"
+                    and item.detail == "stale"
+                    for item in report.jobs
+                )
+            )
+            self.assertNotIn("status=missing", report.summary)
 
     def test_missing_execution_database_is_an_explicit_alert(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

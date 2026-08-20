@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import sqlite3
 import stat
@@ -35,6 +36,7 @@ DEFAULT_THRESHOLDS = {
 }
 RUNTIME_SCRIPTS_DIR = Path("/home/hermes/.hermes/profiles/theia/scripts")
 EXECUTIONS_DB = Path("/home/hermes/.hermes/profiles/theia/cron/executions.db")
+JOBS_CONFIG = Path("/home/hermes/.hermes/profiles/theia/cron/jobs.json")
 REPO_SOURCES = {
     "theia-wallet-pipeline": "wallet_pipeline_v3.py",
     "theia-wallet-monitor": "wallet_monitor_v2.py",
@@ -95,8 +97,33 @@ def _timestamp(value: object) -> float | None:
     return parsed.timestamp()
 
 
-def _read_latest_runs(db_path: Path) -> dict[str, tuple[float, str, str]]:
-    """Return newest execution event per job using a read-only SQLite handle."""
+def _job_id_mapping(jobs_config_path: Path | None) -> dict[str, str]:
+    """Map logical job names to their configured runtime IDs."""
+    mapping = {job_id: job_id for job_id in REQUIRED_JOBS}
+    path = jobs_config_path or JOBS_CONFIG
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return mapping
+
+    entries = config.get("jobs", []) if isinstance(config, dict) else []
+    if not isinstance(entries, list):
+        return mapping
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        logical_id = entry.get("name")
+        runtime_id = entry.get("id")
+        if logical_id in mapping and isinstance(runtime_id, str) and runtime_id:
+            mapping[logical_id] = runtime_id
+    return mapping
+
+
+def _read_latest_runs(
+    db_path: Path,
+    job_id_mapping: Mapping[str, str] | None = None,
+) -> dict[str, tuple[float, str, str]]:
+    """Return newest execution event per logical job using a read-only SQLite handle."""
     if not db_path.is_file():
         return {}
     uri = f"file:{db_path.resolve()}?mode=ro"
@@ -116,14 +143,19 @@ def _read_latest_runs(db_path: Path) -> dict[str, tuple[float, str, str]]:
             con.close()
 
     latest: dict[str, tuple[float, str, str]] = {}
+    logical_by_runtime_id = {job_id: job_id for job_id in REQUIRED_JOBS}
+    for logical_id, runtime_id in (job_id_mapping or {}).items():
+        if logical_id in REQUIRED_JOBS:
+            logical_by_runtime_id[runtime_id] = logical_id
     for job_id, status, claimed_at, started_at, finished_at in rows:
-        if job_id not in REQUIRED_JOBS:
+        logical_id = logical_by_runtime_id.get(job_id)
+        if logical_id is None:
             continue
         event_time = _timestamp(finished_at) or _timestamp(started_at) or _timestamp(claimed_at)
         if event_time is None:
             continue
-        if job_id not in latest or event_time > latest[job_id][0]:
-            latest[job_id] = (event_time, str(status), "executions")
+        if logical_id not in latest or event_time > latest[logical_id][0]:
+            latest[logical_id] = (event_time, str(status), "executions")
     return latest
 
 
@@ -168,11 +200,12 @@ def check_health(
     output_paths: Mapping[str, Path] | None = None,
     repo_scripts_dir: Path | None = None,
     check_hashes: bool = False,
+    jobs_config_path: Path | None = None,
 ) -> HealthReport:
     """Check pipeline freshness and wrapper state without mutating any path."""
     current = float(now) if now is not None else time.time()
     limits = _thresholds(thresholds)
-    evidence = _read_latest_runs(db_path)
+    evidence = _read_latest_runs(db_path, _job_id_mapping(jobs_config_path))
     output_paths = output_paths or {}
     jobs = []
     for job_id in REQUIRED_JOBS:
@@ -265,6 +298,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--output", action="append", default=[], metavar="JOB=PATH")
     parser.add_argument("--check-hashes", action="store_true")
     parser.add_argument("--repo-scripts-dir", type=Path)
+    parser.add_argument("--jobs-config", type=Path, default=JOBS_CONFIG)
     args = parser.parse_args(argv)
     try:
         max_age = _environment_thresholds()
@@ -277,6 +311,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_paths=outputs,
             repo_scripts_dir=args.repo_scripts_dir,
             check_hashes=args.check_hashes,
+            jobs_config_path=args.jobs_config,
         )
     except (OSError, ValueError, sqlite3.Error) as exc:
         print(f"THEIA PIPELINE HEALTH: ALERT\nconfiguration error: {exc}")
