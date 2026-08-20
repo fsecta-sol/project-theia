@@ -71,13 +71,15 @@ def _init() -> None:
     c.execute("""UPDATE archives
                    SET reconstructable=0,
                        integrity_error=COALESCE(integrity_error, 'missing_trade_fills')
-                   WHERE NOT EXISTS (
-                       SELECT 1 FROM trade_fills f
-                       WHERE f.trade_id=archives.trade_id AND f.kind='entry'
-                   ) OR NOT EXISTS (
-                       SELECT 1 FROM trade_fills f
-                       WHERE f.trade_id=archives.trade_id AND f.kind!='entry'
-                   )""")
+                   WHERE (
+                       NOT EXISTS (
+                           SELECT 1 FROM trade_fills f
+                           WHERE f.trade_id=archives.trade_id AND f.kind='entry'
+                       ) OR NOT EXISTS (
+                           SELECT 1 FROM trade_fills f
+                           WHERE f.trade_id=archives.trade_id AND f.kind!='entry'
+                       )
+                   ) AND (reconstructable != 0 OR integrity_error IS NULL)""")
     c.execute("""CREATE TRIGGER IF NOT EXISTS archives_immutable_update
                    BEFORE UPDATE ON archives BEGIN
                      SELECT RAISE(ABORT, 'archives are immutable');

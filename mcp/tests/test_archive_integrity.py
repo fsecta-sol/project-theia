@@ -99,3 +99,46 @@ def test_store_record_fill_never_replaces_sequence(tmp_path):
         store.record_fill("T", **{k: exit_fill[k] for k in (
             "seq", "kind", "ts", "qty", "price", "reserves_base", "reserves_quote",
             "gas_sol", "slippage", "amm_model")})
+
+
+def test_store_init_is_idempotent_for_legacy_archives(tmp_path):
+    store.DB_PATH = str(tmp_path / "legacy.db")
+    conn = sqlite3.connect(store.DB_PATH)
+    conn.executescript(
+        """
+        CREATE TABLE archives (
+            trade_id TEXT PRIMARY KEY,
+            mint TEXT,
+            hypothesis_id TEXT,
+            entry_ts INTEGER,
+            exit_ts INTEGER,
+            hold_secs INTEGER,
+            realized_pnl_sol REAL,
+            roi REAL,
+            expectancy_contrib REAL,
+            gas_sol_total REAL,
+            slippage_total REAL,
+            exit_reason TEXT,
+            created_ts INTEGER
+        );
+        CREATE TABLE trade_fills (trade_id TEXT, kind TEXT);
+        INSERT INTO archives(
+            trade_id, mint, hypothesis_id, entry_ts, exit_ts, hold_secs,
+            realized_pnl_sol, roi, expectancy_contrib, gas_sol_total,
+            slippage_total, exit_reason, created_ts
+        ) VALUES ('legacy', 'M', 'H', 1, 2, 999, -1, -1, -1, 0, 0, 'old', 3);
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    store._init()
+    store._init()
+
+    conn = sqlite3.connect(store.DB_PATH)
+    assert conn.execute(
+        "SELECT reconstructable, integrity_error FROM archives WHERE trade_id='legacy'"
+    ).fetchone() == (0, "missing_trade_fills")
+    with pytest.raises(sqlite3.IntegrityError, match="immutable"):
+        conn.execute("UPDATE archives SET hold_secs=1000 WHERE trade_id='legacy'")
+    conn.close()
