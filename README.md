@@ -112,13 +112,13 @@ python3 -m pytest compute/tests/ mcp/tests/test_mcp_servers.py \
 ## Workflow Loop
 
 ```
-LEARN mechanics ──► DISCOVER pools ──► SCREEN tokens
+DISCOVER wallets ──► CAPTURE signals ──► SCREEN + PAPER trade
        │                              │
        ▼                              ▼
-FORM hypothesis ──► BACKTEST history ──► PAPER trade
+MONITOR positions ──► EXIT engine ──► ARCHIVE PnL
        │                              │
        ▼                              ▼
-EVALUATE expectancy ──► ARCHIVE ──► refine / repeat
+EVALUATE expectancy ──► REPORT ──► refine / repeat
 ```
 
 ---

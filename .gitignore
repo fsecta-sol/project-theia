@@ -4,6 +4,7 @@
 .secret
 .env
 *.env
+.env.local
 
 # SQLite databases
 *.db

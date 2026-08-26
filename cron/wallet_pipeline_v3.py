@@ -120,10 +120,10 @@ with script_lock("wallet_pipeline"):
                     continue
                 if s.get("side") != "buy" or s.get("quote_mint") != WSOL:
                     continue
-                # Tradeable only if the buy is within our entry window (or within
-                # grace of it). Older buys = missed; store but never paper-trade
-                # them, so stale history can't pollute the forward sample.
-                if ts < now - ENTRY_WINDOW - DETECT_GRACE:
+                # Tradeable only if the buy is within our targeted entry window.
+                # Match backtest timing: enter only in T+25m to T+35m window to align
+                # with the T+30m simulated entry timing from profile_discovered.py
+                if not (now - 2100 <= ts <= now - 1500):  # T+25m to T+35m window
                     continue
                 con.execute("""
                     INSERT OR IGNORE INTO wallet_signals

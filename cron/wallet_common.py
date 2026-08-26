@@ -173,8 +173,12 @@ def sol_usd(dexdata, ttl: float = 900.0) -> float:
                 break
             except (TypeError, ValueError):
                 continue
-    if not price:
-        price = 150.0
+    # Sanity-check: SOL/USD must be in a realistic range. A value outside
+    # 10–10000 means we matched a wrong pair (e.g. inverted or non-USDC quote)
+    # — fall back to the last cached value or the hardcoded default.
+    if not price or not (10.0 < price < 10_000.0):
+        last = _load_cache("sol_usd", "sol", ttl=86400)  # accept stale up to 24h
+        price = last["price"] if (last and 10.0 < last.get("price", 0) < 10_000.0) else 150.0
     _save_cache("sol_usd", "sol", {"price": price})
     return price
 

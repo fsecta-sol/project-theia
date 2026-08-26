@@ -185,13 +185,19 @@ survives a 30-min copy delay), then tracks/paper-trades them continuously. Deplo
 
 | Script | What | Schedule |
 |--------|------|----------|
-| `theia-wallet-pipeline.py` | Poll tracked wallets → capture new buys → screen (liq>$5k + price cap) → open paper trades | every 10 min |
-| `theia-wallet-monitor.py` | Apply `exit_engine` (stop -35% / TP 2x-4x / 30m time stop) to open positions → archive PnL | every 5 min |
+| `theia-wallet-pipeline.py` | Poll tracked wallets → capture new buys in T+25m to T+35m window → screen (liq>$5k + price cap) → open paper trades | every 5 min |
+| `theia-wallet-monitor.py` | Apply `exit_engine` (stop -35% / TP 2x-4x / 60m time stop) to open positions → archive PnL | every 5 min |
+| `theia-wallet-discovery.py` | Scrape GMGN leaderboard → profile wallets with latency-tolerance test (train/test split) → flag `is_smart_money=1` | every 6h |
 | `theia-wallet-report.py` | Aggregate forward stats (expectancy/PF/win-rate) for the daily digest | daily 07:00 |
+
+**Key timing fix (post-v3):** Pipeline now enters only in T+25m to T+35m window (instead of ASAP within 30min)
+to match the backtest timing (T+30m simulated entry). Cron changed from every 10min to every 5min to
+ensure precise window capture without missing signals. Time stop extended from 30min to 60min (proved
+better in M-04: E +0.0122 improvement).
 
 **Key learning (the discriminator):** wallet win-rate/PnL is the *wrong* filter — high
 win-rate wallets are speed-scalpers whose edge evaporates <30 min. The correct filter is
-**latency tolerance** (`latency_exp > 0` when followed 30-min late). 8 wallets currently
+**latency tolerance** (`latency_exp > 0` when followed 30-min late). Verified wallets
 flagged `is_smart_money=1` in `wallet_profiles`.
 
 **Validation state:** in-sample cluster backtest n=16, win 62.5%, +0.015 SOL/trade, PF 1.57 —

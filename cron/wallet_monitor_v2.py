@@ -164,7 +164,7 @@ with script_lock("wallet_monitor"):
             continue
 
         params = {"hard_stop": -0.35, "tp_ladder": [(2.0, 0.5), (4.0, 0.5)],
-                  "trail_drop": 0.25, "time_stop_secs": 30 * 60}
+                  "trail_drop": 0.25, "time_stop_secs": 60 * 60}  # Updated from 30min to 60min per M-04 finding
         ex = exit_engine.simulate_exit(entry_price, entry_ts, forward, params)
         exit_price = ex["realized_price"]
         exit_reason = ex["final_reason"]
