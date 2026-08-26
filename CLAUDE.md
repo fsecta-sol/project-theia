@@ -34,7 +34,7 @@ they mean "not yet," not "broken."** Do not switch a later phase on early.
   deployed to Hermes (profile `theia`); cron token-burn hygiene fixed (`theia-heartbeat`
   disabled; `theia-task-runner` runs as a `no_agent` 0-LLM script).
 - **Phase 1 — Knowledge-first ("week 1") — 🟢 CURRENT.** Only `theia-learn` (2h) +
-  `theia-task-runner` (infra) run; trading crons stay off. Work the 10 `SEED_QUESTIONS.md`
+  `theia-task-runner` (infra) run; trading crons stay off. Work the 10 `docs/SEED_QUESTIONS.md`
   → auto-discovery red-string graph. **Exit:** all 10 seed questions answered (each note ≥1
   source); notes promoted `draft → verified` (define the rule this phase); graph spans the 5
   knowledge modules; screening primitives covered (LP burn/lock, mint/freeze authority,
@@ -199,6 +199,12 @@ better in M-04: E +0.0122 improvement).
 win-rate wallets are speed-scalpers whose edge evaporates <30 min. The correct filter is
 **latency tolerance** (`latency_exp > 0` when followed 30-min late). Verified wallets
 flagged `is_smart_money=1` in `wallet_profiles`.
+
+**Safety mechanisms:** screening veto (liquidity <$5k, price cap 1.5x wallet exec, honeypot
+flags) · per-wallet exposure cap (max 3 concurrent open positions) · dedup (one paper entry
+per mint). **Data sources:** GMGN (wallet PnL/winrate/tags) · Helius RPC (swap history) ·
+DexScreener (pool liq/price/volume) · Gecko OHLCV (forward price for exit sim) · local SQLite
+(signals/trades/profiles/PnL). All pipeline jobs run `no_agent: true` (0 LLM tokens).
 
 **Validation state:** in-sample cluster backtest n=16, win 62.5%, +0.015 SOL/trade, PF 1.57 —
 NOT yet significant. Forward paper trading is the only way to prove it out-of-sample. Gate:
