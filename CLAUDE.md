@@ -24,43 +24,23 @@ is a milestone, not the target. Route every P&L/screening number through determi
 
 ## Rollout phases
 
-Theia rolls out in gated phases — **knowledge first, trading later.** This encodes the
-EARNED-AUTONOMY principle: each phase is gated by the previous phase's **Exit** criterion,
-and cron jobs are enabled **one at a time** (in `~/.hermes/profiles/theia/cron/jobs.json`)
-only after that phase's smoke test. **Empty trading tables are expected until their phase —
-they mean "not yet," not "broken."** Do not switch a later phase on early.
+Theia rolls out in gated phases, but the deployed wallet-pipeline path is now running forward paper validation.
+The phase label below distinguishes **operational state** from **promotion gates**; do not describe
+an active paper-trading loop as empty or disabled merely because the original phase-gated skills
+remain off.
 
-- **Phase 0 — Foundation & deploy — ✅ DONE.** L1 MCP + L2 compute built & unit-tested;
-  deployed to Hermes (profile `theia`); cron token-burn hygiene fixed (`theia-heartbeat`
-  disabled; `theia-task-runner` runs as a `no_agent` 0-LLM script).
-- **Phase 1 — Knowledge-first ("week 1") — 🟢 CURRENT.** Only `theia-learn` (2h) +
-  `theia-task-runner` (infra) run; trading crons stay off. Work the 10 `docs/SEED_QUESTIONS.md`
-  → auto-discovery red-string graph. **Exit:** all 10 seed questions answered (each note ≥1
-  source); notes promoted `draft → verified` (define the rule this phase); graph spans the 5
-  knowledge modules; screening primitives covered (LP burn/lock, mint/freeze authority,
-  rug/honeypot, graduation).
-- **Phase 2 — Discovery + screening (read-only, no trades).** Enable `theia-discover-screen`
-  (+ `label-corpus`); fill `tokens`/`pools`/`screens`/`token_corpus`. Tune
-  `discovery_filter.py`; validate `screen_score.py` against a known rug/grad corpus.
-  **Exit:** target N tokens screened; grad/dead separation measured; every screen reconstructable.
-- **Phase 3 — Hypothesis + backtest (API-free).** Enable `theia-form-hypothesis` +
-  `theia-backtest` (`run_hypotheses.py` / `backtest_engine.py`); walk-forward on stored
-  `price_snapshots`, gas + slippage applied. **Exit:** ≥1 hypothesis passing
-  **expectancy > 0 AND profit_factor > 1** out-of-sample.
-- **Phase 4 — Harness + guardrails live (the money-action gate).** Wire `harness.py`
-  (`verify_grounding` + `policy_gate`) into the live loop; populate `llm_shots` +
-  `context_windows` (both 0 today — built but never called); turn on the budget breaker
-  (`budget_ledger`). Harden the regex-based grounding before trusting it to gate money.
-  **Exit:** `llm_shots` logs every shot; `policy_gate` demonstrably DENY/ESCALATE on a test;
-  `budget_ledger` tracks per-source spend.
-- **Phase 5 — Paper trade + monitor.** Enable `theia-paper-trade` + `theia-monitor` +
-  `theia-archive`; simulated fills off live reserves/gas/fees; `exit_engine.py` for exits.
-  **Exit:** the success metric — **expectancy > 0 AND profit_factor > 1 net of latency + fees**,
-  out-of-sample, over a meaningful sample.
-- **Phase 6 — Scale via delegation (only when volume demands it).** Register subagent
-  profiles (`theia-batch-enricher`, `theia-builder`) in Hermes config (only `theia` today);
-  implement the `cron/task_runner.py` placeholder handlers; wire `_handle_delegate` → real
-  subagent dispatch. **Trigger:** only when serial throughput is the bottleneck — not before.
+- **Phase 0 — Foundation & deploy — ✅ DONE.** L1 MCP + L2 compute built & unit-tested and deployed to Hermes (profile `theia`).
+- **Phase 1 — Knowledge-first — ✅ BASELINE COMPLETE / ongoing knowledge maintenance.** The original `theia-learn` and task-runner phase remains documented, but it is no longer the only active operational path.
+- **Phase 2 — Discovery + screening — ✅ OPERATIONAL VIA V3 WALLET PIPELINE.** GMGN wallet discovery, wallet qualification, signal capture, safety screening, and persistence are running through the `theia-wallet-*` jobs. The legacy `theia-discover-screen` and `label-corpus` jobs remain disabled; screening is a safety veto, not the trading edge.
+- **Phase 3 — Hypothesis + backtest — ⚠️ VALIDATION IN PROGRESS.** The wallet-cluster/latency hypothesis has an in-sample reference (`n=16`, PF 1.57), but the out-of-sample promotion gate is not passed. Forward results must continue to be computed from stored paper fills with gas, fees, latency, and slippage.
+- **Phase 4 — Harness + guardrails — ⚠️ PARTIAL / PIPELINE GUARDRAILS ACTIVE.** The no-agent wallet pipeline enforces deterministic screening, exposure, deduplication, entry-window, and exit rules. The original LLM harness path and its phase-gated jobs are not the authority for this no-agent loop.
+- **Phase 5 — Forward paper trade + monitor — 🟢 OPERATIONAL, NOT PROMOTED.** `theia-wallet-pipeline` and `theia-wallet-monitor` are enabled as `no_agent` jobs. The live DB currently contains 11 paper trades and 11 archive rows; there are currently 0 open positions. This is paper-only: no signing keys and no real transactions. The promotion gate remains **expectancy > 0 AND profit_factor > 1**, net of latency and costs, out-of-sample, over a meaningful sample. The current stored forward sample is small and must not be treated as proof.
+- **Phase 6 — Scale via delegation — NOT STARTED.** Do not enable delegation until serial throughput is a demonstrated bottleneck.
+
+**Current operational status (verified 2026-08-28, UTC):** enabled no-agent jobs are
+`theia-wallet-pipeline` (every 5 min), `theia-wallet-monitor` (every 5 min),
+`theia-wallet-discovery` (every hour), and `theia-pipeline-health` (every 5 min).
+`theia-wallet-report` is present but disabled. Legacy phase-gated jobs remain disabled.
 
 ## Theia v3 — smart-money pivot (research 2026-08-09)
 
@@ -81,7 +61,13 @@ GMGN.ai already computes full per-wallet PnL / win-rate / PnL-distribution / tag
   Response body is under the `content` key (not `text`).
 - **Endpoints (verified):**
   - Smart-money leaderboard (ranked wallets + **full PnL distribution buckets** +
-    `tags`): `/defi/quotation/v1/rank/sol/wallets/{period}?orderby=pnl_{period}&direction=desc&limit=N`
+    `tags`): `/defi/quotation/v1/rank/sol/wallets/{period}?orderby={ob}&direction=desc&limit=N`.
+    Orderby valid (verified live 2026-08-27): `pnl_{7d,30d}`, `winrate_{7d,30d}`,
+    `volume_{7d,30d}`, `pnl_1d`, `winrate_1d`, `profit_ratio_7d`, `buy_7d`.
+    Discovery scrapes 9 of these at `limit=100` → ~255 unique wallets/run.
+    **Requires 1MB response cap** (`fetch_page max_chars=1_000_000`): the old 100KB
+    cap truncated pnl-sorted responses mid-JSON and silently dropped the most
+    valuable (highest-PnL) wallets.
   - Per-wallet stats: `/defi/quotation/v1/smartmoney/sol/walletNew/{addr}?period=30d` (account-level
     `realized_profit`/`pnl` always populated; `winrate`/`token_num`/distribution only for
     GMGN-tracked wallets — else use the leaderboard, whose buckets ARE populated).
@@ -187,22 +173,32 @@ survives a 30-min copy delay), then tracks/paper-trades them continuously. Deplo
 |--------|------|----------|
 | `theia-wallet-pipeline.py` | Poll tracked wallets → capture new buys in T+25m to T+35m window → screen (liq>$5k + price cap) → open paper trades | every 5 min |
 | `theia-wallet-monitor.py` | Apply `exit_engine` (stop -35% / TP 2x-4x / 60m time stop) to open positions → archive PnL | every 5 min |
-| `theia-wallet-discovery.py` | Scrape GMGN leaderboard → profile wallets with latency-tolerance test (train/test split) → flag `is_smart_money=1` | every 6h |
+| `theia-wallet-discovery.py` | Scrape GMGN leaderboard (9 sorts × limit=100 → ~255 wallets) → GMGN-direct gate → flag `is_smart_money=1` | every 1h |
 | `theia-wallet-report.py` | Aggregate forward stats (expectancy/PF/win-rate) for the daily digest | daily 07:00 |
 
 **Key timing fix (post-v3):** Pipeline now enters only in T+25m to T+35m window (instead of ASAP within 30min)
-to match the backtest timing (T+30m simulated entry). Cron changed from every 10min to every 5min to
-ensure precise window capture without missing signals. Time stop extended from 30min to 60min (proved
+to match the backtest timing (T+30m simulated entry). Time stop extended from 30min to 60min (proved
 better in M-04: E +0.0122 improvement).
 
+**GMGN-FIRST v2 (2026-08-27) — discovery rewritten:** scrapes 9 GMGN leaderboard sorts
+(`pnl_7d/30d`, `winrate_7d/30d`, `volume_7d/30d`, `pnl_1d`, `profit_ratio_7d`, `buy_7d`,
+all `limit=100` → ~255 unique wallets/run) and gates **directly on GMGN stats** — no more
+swap-history fetch, `profile_wallet`, or latency train/test backtest (recomputing winrate
+from ~20 txs misled: e.g. GMGN winrate_7d=1.0 on 5 txs & 9.9-day holds). Gate:
+`wr7>=0.6 AND wr30>=0.5 AND txs7>=150 AND hold<48h`, drop `wash_trader`/`bot` tags.
+**Every scanned wallet (pass + fail) is appended to `wallet_scan_history`** — the raw
+labeled dataset for backtesting selection rules later. Tracked universe is intentionally
+small (~7-10); selectivity is the edge.
+
 **Key learning (the discriminator):** wallet win-rate/PnL is the *wrong* filter — high
-win-rate wallets are speed-scalpers whose edge evaporates <30 min. The correct filter is
-**latency tolerance** (`latency_exp > 0` when followed 30-min late). Verified wallets
-flagged `is_smart_money=1` in `wallet_profiles`.
+win-rate wallets are speed-scalpers whose edge evaporates <30 min. Trust GMGN's
+own winrate/PnL (computed on thousands of txs) rather than recomputing from small samples;
+flag `is_smart_money=1` in `wallet_profiles` only on the gate above.
 
 **Safety mechanisms:** screening veto (liquidity <$5k, price cap 1.5x wallet exec, honeypot
 flags) · per-wallet exposure cap (max 3 concurrent open positions) · dedup (one paper entry
-per mint). **Data sources:** GMGN (wallet PnL/winrate/tags) · Helius RPC (swap history) ·
+per mint). **Data sources:** GMGN (wallet PnL/winrate/tags, browser-tier scrape w/ 1MB cap —
+100KB cap used to truncate pnl sorts) · Helius RPC (swap history, 4-key rotation) ·
 DexScreener (pool liq/price/volume) · Gecko OHLCV (forward price for exit sim) · local SQLite
 (signals/trades/profiles/PnL). All pipeline jobs run `no_agent: true` (0 LLM tokens).
 
@@ -212,7 +208,8 @@ NOT yet significant. Forward paper trading is the only way to prove it out-of-sa
 
 Supporting compute: `compute/wallet_profiler.py` (FIFO round-trip matching + pattern
 classification), `compute/tests/test_wallet_profiler.py`. DB tables: `wallet_profiles`,
-`wallet_trades`, `wallet_clusters`, `wallet_signals`.
+`wallet_trades`, `wallet_clusters`, `wallet_signals`, **`wallet_scan_history`** (append-only
+scan log w/ full GMGN fields + gate_pass/reason — the selection-backtest dataset).
 
 ### Skills (L3 — Theia's playbooks)
 
