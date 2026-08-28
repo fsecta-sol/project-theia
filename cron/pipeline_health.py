@@ -26,12 +26,14 @@ REQUIRED_JOBS = (
     "theia-wallet-pipeline",
     "theia-wallet-monitor",
     "theia-wallet-discovery",
+    "theia-source2-discovery",
     "theia-wallet-report",
 )
 DEFAULT_THRESHOLDS = {
     "theia-wallet-pipeline": 30 * 60,
     "theia-wallet-monitor": 15 * 60,
     "theia-wallet-discovery": 12 * 60 * 60,
+    "theia-source2-discovery": 12 * 60 * 60,
     "theia-wallet-report": 36 * 60 * 60,
 }
 RUNTIME_SCRIPTS_DIR = Path("/home/hermes/.hermes/profiles/theia/scripts")
@@ -41,6 +43,7 @@ REPO_SOURCES = {
     "theia-wallet-pipeline": "wallet_pipeline_v3.py",
     "theia-wallet-monitor": "wallet_monitor_v2.py",
     "theia-wallet-discovery": "wallet_discovery_run.py",
+    "theia-source2-discovery": "discover_source2.py",
     "theia-wallet-report": "wallet_report_v2.py",
 }
 
@@ -154,8 +157,26 @@ def _read_latest_runs(
         event_time = _timestamp(finished_at) or _timestamp(started_at) or _timestamp(claimed_at)
         if event_time is None:
             continue
+        # A 'running' event is evidence of liveness, but its start time keeps
+        # advancing with every overlapping tick — which makes a 5-min monitor
+        # look perpetually "running" and never "completed" when the watchdog
+        # races it. Prefer the newest COMPLETED event when one exists, so the
+        # watchdog judges freshness, not race conditions.
         if logical_id not in latest or event_time > latest[logical_id][0]:
             latest[logical_id] = (event_time, str(status), "executions")
+    # Second pass: prefer completed events over in-flight ones (race fix).
+    completed: dict[str, tuple[float, str, str]] = {}
+    for job_id, status, claimed_at, started_at, finished_at in rows:
+        logical_id = logical_by_runtime_id.get(job_id)
+        if logical_id is None or status != "completed":
+            continue
+        event_time = _timestamp(finished_at) or _timestamp(claimed_at)
+        if event_time is None:
+            continue
+        if logical_id not in completed or event_time > completed[logical_id][0]:
+            completed[logical_id] = (event_time, "completed", "executions")
+    for logical_id, event in completed.items():
+        latest[logical_id] = event
     return latest
 
 
@@ -191,6 +212,30 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _enabled_jobs(jobs_config_path: Path | None) -> set[str]:
+    """Jobs that are enabled in the scheduler config; empty set → assume all required.
+
+    A required job that is intentionally DISABLED (e.g. theia-wallet-report,
+    paused since 2026-08-22) must not produce a perpetual "no completed run"
+    ALERT. If the config can't be read, fall back to all required jobs.
+    """
+    path = jobs_config_path or JOBS_CONFIG
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return set(REQUIRED_JOBS)
+    entries = config.get("jobs", []) if isinstance(config, dict) else []
+    if not isinstance(entries, list):
+        return set(REQUIRED_JOBS)
+    enabled = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("name") in REQUIRED_JOBS and entry.get("enabled"):
+            enabled.add(entry["name"])
+    return enabled or set(REQUIRED_JOBS)
+
+
 def check_health(
     *,
     db_path: Path,
@@ -206,9 +251,13 @@ def check_health(
     current = float(now) if now is not None else time.time()
     limits = _thresholds(thresholds)
     evidence = _read_latest_runs(db_path, _job_id_mapping(jobs_config_path))
+    required = _enabled_jobs(jobs_config_path)
     output_paths = output_paths or {}
     jobs = []
     for job_id in REQUIRED_JOBS:
+        if job_id not in required:
+            jobs.append(JobResult(job_id, "OK", None, limits[job_id], "config", "disabled (not required)", "disabled"))
+            continue
         output = output_paths.get(job_id)
         output_time = output.stat().st_mtime if output and output.is_file() else None
         db_event = evidence.get(job_id)

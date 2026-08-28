@@ -170,13 +170,29 @@
       "skill": "",
       "schedule": {
         "kind": "cron",
-        "expr": "0 */6 * * *",
-        "display": "every 6h \u2014 wallet discovery + revalidation"
+        "expr": "0 * * * *",
+        "display": "every 1h — wallet discovery + revalidation"
       },
       "enabled": true,
       "state": "scheduled",
       "no_agent": true,
       "script": "theia-wallet-discovery.sh"
+    },
+    {
+      "id": "theia-source2-discovery",
+      "name": "theia-source2-discovery",
+      "prompt": "Source-2 wallet discovery (ADDITIVE): scrape Dexscreener trending pools (h24/h6 up, liq>=30k, mcap<50M), fetch Birdeye top_traders, pre-filter (no bot tags, realizedPnl>0, trade>=5), then GATE via GMGN 7d wallet analytics (realized_profit_7d>0 AND tx30d<5000, blacklist bundler/dev seen on any token). Upsert passing wallets as is_smart_money=1 source='dex_trending'.",
+      "skills": [],
+      "skill": "",
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 */6 * * *",
+        "display": "every 6h — trending top-performer wallet discovery (source 2)"
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "no_agent": true,
+      "script": "theia-source2-discovery.sh"
     },
     {
       "id": "theia-pipeline-health",
