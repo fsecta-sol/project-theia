@@ -37,10 +37,25 @@ remain off.
 - **Phase 5 — Forward paper trade + monitor — 🟢 OPERATIONAL, NOT PROMOTED.** `theia-wallet-pipeline` and `theia-wallet-monitor` are enabled as `no_agent` jobs. The live DB currently contains 11 paper trades and 11 archive rows; there are currently 0 open positions. This is paper-only: no signing keys and no real transactions. The promotion gate remains **expectancy > 0 AND profit_factor > 1**, net of latency and costs, out-of-sample, over a meaningful sample. The current stored forward sample is small and must not be treated as proof.
 - **Phase 6 — Scale via delegation — NOT STARTED.** Do not enable delegation until serial throughput is a demonstrated bottleneck.
 
-**Current operational status (verified 2026-08-28, UTC):** enabled no-agent jobs are
+**Current operational status (verified 2026-08-29, UTC):** enabled no-agent jobs are
 `theia-wallet-pipeline` (every 5 min), `theia-wallet-monitor` (every 5 min),
-`theia-wallet-discovery` (every hour), and `theia-pipeline-health` (every 5 min).
+`theia-wallet-discovery` (every hour), `theia-source2-discovery` (every 6h), and
+`theia-pipeline-health` (every 5 min).
 `theia-wallet-report` is present but disabled. Legacy phase-gated jobs remain disabled.
+
+**Source-2 discovery (2026-08-29):** a second, ADDITIVE wallet-discovery source is live.
+`discover_source2.py` (cron `theia-source2-discovery`, every 6h) scrapes Dexscreener
+trending pools (h24>=50 & h6>=50, liq>=30k, mcap<50M) → Birdeye `top_traders` (24h)
+pre-filter (no bundler/dev/sniper/bot tags, realizedPnl>0, trade>=5) → **mandatory GMGN
+7d wallet-analytics gate** (`realized_profit_7d > 0` AND `buy_30d+sell_30d < 5000`,
+plus a persistent `dex_trending_blacklist` for wallets tagged bundler/dev on ANY token —
+Birdeye tags are per-token inconsistent, so once flagged a wallet stays flagged).
+Passing wallets upsert to `wallet_profiles` as `is_smart_money=1`, `source='dex_trending'`.
+Rationale (validated 2026-08-28): `top_traders` alone is misleading — churn bots win on
+one pump but bleed fees (7DyzpBs -$5.1k/7d, 6XPyYm -$9.2k/7d passed top_traders but
+failed GMGN 7d). The GMGN gate is what separates real smart money (DgPFb2 +$21.4k,
+13VK7Zr +$31.4k). Requires the webscraper venv (scrapling for GMGN CF-bypass; the MCP
+server's StealthyFetcher fails with "Playwright sync inside asyncio" — run standalone).
 
 ## Theia v3 — smart-money pivot (research 2026-08-09)
 
@@ -174,6 +189,7 @@ survives a 30-min copy delay), then tracks/paper-trades them continuously. Deplo
 | `theia-wallet-pipeline.py` | Poll tracked wallets → capture new buys in T+25m to T+35m window → screen (liq>$5k + price cap) → open paper trades | every 5 min |
 | `theia-wallet-monitor.py` | Apply `exit_engine` (stop -35% / TP 2x-4x / 60m time stop) to open positions → archive PnL | every 5 min |
 | `theia-wallet-discovery.py` | Scrape GMGN leaderboard (9 sorts × limit=100 → ~255 wallets) → GMGN-direct gate → flag `is_smart_money=1` | every 1h |
+| `discover_source2.py` | Source-2: Dexscreener trending → Birdeye top_traders → GMGN 7d gate (rPnl7d>0, tx30d<5000, blacklist) → flag `is_smart_money=1` | every 6h |
 | `theia-wallet-report.py` | Aggregate forward stats (expectancy/PF/win-rate) for the daily digest | daily 07:00 |
 
 **Key timing fix (post-v3):** Pipeline now enters only in T+25m to T+35m window (instead of ASAP within 30min)
