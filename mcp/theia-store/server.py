@@ -140,11 +140,17 @@ def upsert_pool(pool_addr: str, mint: str, dex: str = "", amm_model: str = "v2",
 
 @mcp.tool()
 def record_price_snapshots(pool_addr: str, ohlcv: list, currency: str = "token") -> dict:
-    """ohlcv = [[ts,o,h,l,c], ...]. Idempotent per (pool,ts,currency)."""
+    """ohlcv = [[ts,o,h,l,c], ...] or [[ts,o,h,l,c,v,mcap], ...]. Idempotent per (pool,ts,currency).
+
+    v1.1: accepts optional volume (index 5) and mcap (index 6) per candle for
+    volume-confirmed dip-reversal backtests. Existing rows (no v/mcap) default 0.
+    """
     c = _conn()
-    c.executemany("""INSERT OR REPLACE INTO price_snapshots(pool_addr,ts,o,h,l,c,currency)
-                     VALUES(?,?,?,?,?,?,?)""",
-                  [(pool_addr, r[0], r[1], r[2], r[3], r[4], currency) for r in ohlcv])
+    c.executemany("""INSERT OR REPLACE INTO price_snapshots(pool_addr,ts,o,h,l,c,currency,v,mcap)
+                     VALUES(?,?,?,?,?,?,?,?,?)""",
+                  [(pool_addr, r[0], r[1], r[2], r[3], r[4], currency,
+                    float(r[5]) if len(r) > 5 and r[5] is not None else 0.0,
+                    float(r[6]) if len(r) > 6 and r[6] is not None else 0.0) for r in ohlcv])
     c.commit(); n = c.total_changes; c.close()
     return {"ok": True, "written": n}
 

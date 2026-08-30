@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS pools (
 CREATE TABLE IF NOT EXISTS price_snapshots (
   pool_addr TEXT, ts INTEGER,
   o REAL, h REAL, l REAL, c REAL, currency TEXT DEFAULT 'token',
+  -- v1.1: volume + mcap per candle (needed for volume-confirmed dip reversal)
+  v REAL DEFAULT 0, mcap REAL DEFAULT 0,
   PRIMARY KEY (pool_addr, ts, currency)
 );
 
