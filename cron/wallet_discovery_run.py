@@ -244,6 +244,15 @@ with script_lock("wallet_discovery", timeout_wait=30):
             # gak salah-hapus wallet yang masih aktif (fix 2026-08-27).
             la_ts = _f(w.get("last_active"))
             la_ts = int(la_ts) if (la_ts and la_ts > 1e9) else now
+            # track_enabled=0 (manual exclusion) memaksa is_smart_money=0 agar
+            # pipeline (WHERE track_enabled=1) tidak mem-poll wallet yang
+            # sengaja dimatikan (verified-6 filter, 2026-08-31).
+            forced_off = con.execute(
+                "SELECT track_enabled FROM wallet_profiles WHERE wallet=?",
+                (addr,)).fetchone()
+            forced_off = (forced_off[0] == 0) if forced_off else False
+            if forced_off:
+                is_sm = 0
             con.execute("""
                 UPDATE wallet_profiles SET
                   is_smart_money=?, win_rate=?, total_trades=?,
@@ -257,19 +266,22 @@ with script_lock("wallet_discovery", timeout_wait=30):
     con.commit()
 
     # ── Stage 3: prune stale tracked wallets ───────────────────────────────
+    # Hanya prune wallet yang masih track_enabled=1 — wallet yang sengaja
+    # dimatikan (track_enabled=0, verified-6 filter) tidak disentuh.
     stale = con.execute("""
         SELECT wallet FROM wallet_profiles
-        WHERE is_smart_money=1 AND last_active_ts IS NOT NULL
+        WHERE is_smart_money=1 AND track_enabled=1 AND last_active_ts IS NOT NULL
           AND last_active_ts < ?
     """, (now - 14 * 86400,)).fetchall()
     pruned = 0
     for (w,) in stale:
-        con.execute("UPDATE wallet_profiles SET is_smart_money=0 WHERE wallet=?", (w,))
+        con.execute("UPDATE wallet_profiles SET is_smart_money=0, track_enabled=0 WHERE wallet=?", (w,))
         print(f"[discovery] prune stale: {w[:14]}")
         pruned += 1
     con.commit()
 
-    n_tracked = con.execute("SELECT COUNT(*) FROM wallet_profiles WHERE is_smart_money=1").fetchone()[0]
+    n_tracked = con.execute(
+        "SELECT COUNT(*) FROM wallet_profiles WHERE is_smart_money=1 AND track_enabled=1").fetchone()[0]
     con.close()
 
     print("\n=== WALLET DISCOVERY DIGEST (GMGN-FIRST) ===")
