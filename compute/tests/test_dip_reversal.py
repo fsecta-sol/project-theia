@@ -48,6 +48,31 @@ def test_no_overlap_trades():
         assert entries == sorted(entries)
 
 
+def test_parse_mint():
+    """Cache filenames are <mint>_<dayBucket|now>.json (with optional source
+    prefix). The suffix is the day bucket, NOT part of the mint. Regression for
+    a bug that keyed mints by the day bucket and fused different pools."""
+    from compute.volume_lowbuy_backtest import _parse_mint
+    assert _parse_mint("5Ay2B67HdBJo89nGArMopjrugJdJXcmxNfxfsnTJpump_20689") == \
+        "5Ay2B67HdBJo89nGArMopjrugJdJXcmxNfxfsnTJpump"
+    assert _parse_mint("23LGuH8WeZYVXRUSvqHcxzAZpSZT1PzTG8yYJfXPpump_now") == \
+        "23LGuH8WeZYVXRUSvqHcxzAZpSZT1PzTG8yYJfXPpump"
+    assert _parse_mint("gecko_ASzjmGyFvBjBc9_20680") == "ASzjmGyFvBjBc9"
+    assert _parse_mint("Czi6TALJYnKd4ozeTmXA_20670") == "Czi6TALJYnKd4ozeTmXA"
+    assert _parse_mint("49nkLrXi8nCZBVKsShDNasEtPe4Vn1mx9Xbr3kTa8pTL_20679") == \
+        "49nkLrXi8nCZBVKsShDNasEtPe4Vn1mx9Xbr3kTa8pTL"
+
+
+def test_load_mints_bare_addresses():
+    """load_mints keys by the real mint address, not the day-bucket suffix."""
+    from compute.volume_lowbuy_backtest import load_mints
+    mints = load_mints(min_candles=120)
+    # every key must look like a Solana base58 address (length ~32-44, no '_', no digit-only)
+    for k in mints:
+        assert "_" not in k, f"mint key {k!r} still contains '_' (day-bucket leak)"
+        assert not k.lstrip("-").isdigit(), f"mint key {k!r} is numeric (day-bucket leak)"
+
+
 def test_notional_sanity():
     assert NOTIONAL == 0.5
 
