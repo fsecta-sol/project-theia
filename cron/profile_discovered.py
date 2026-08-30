@@ -112,17 +112,51 @@ for w in todo:
     train_buys = train_buys[-MAX_SIMS_PER_SPLIT:]
     test_buys = test_buys[-MAX_SIMS_PER_SPLIT:]
 
-    def _sim(b):
-        mint = b.get("base_mint")
+    # Batch: resolve pool ONCE per unique mint (was once per buy → the same
+    # slow Gecko call repeated up to 16× per wallet). OHLCV is fetched per buy
+    # window (before_ts = buy_ts + 4h) — a single before_ts=0 fetch only covers
+    # the last ~16h, while buys are up to 14 days old, so entry candles were
+    # never found and every sim silently dropped. gecko_ohlcv_for retries +
+    # disk-caches by (mint, day), so overlapping windows are cheap.
+    import concurrent.futures as _cf
+
+    def _get_pool(mint: str):
         try:
             info = wc.resolve_pool(dexdata, mint)
             if not info or info.get("liq_usd", 0) < 5000:
-                return None
-            liq = info["liq_usd"]
-            pool_addr = (info.get("pool") or "").replace("solana_", "")
-            rows = wc.gecko_ohlcv(dexdata, mint, before_ts=b["ts"] + 4 * 3600, ttl=86400)
+                return mint, None
+            return mint, info
+        except Exception as e:
+            print(f"    {w[:8]}/{mint[:8]} err: {e}")
+            return mint, None
+
+    mints = sorted({b.get("base_mint") for b in train_buys + test_buys if b.get("base_mint")})
+    pool_info = {}
+    with _cf.ThreadPoolExecutor(max_workers=3) as ex:
+        for mint, info in ex.map(_get_pool, mints):
+            pool_info[mint] = info
+
+    def _fetch(b):
+        mint = b.get("base_mint")
+        info = pool_info.get(mint)
+        if not info:
+            return b, None
+        try:
+            rows = wc.gecko_ohlcv_for(dexdata, mint, before_ts=b["ts"] + 4 * 3600, ttl=86400)
             if not rows or len(rows) < 35:
-                return None
+                return b, None
+            return b, (info, rows)
+        except Exception as e:
+            print(f"    {w[:8]}/{mint[:8]} err: {e}")
+            return b, None
+
+    def _compute(b_rows):
+        b, got = b_rows
+        if not got:
+            return None
+        info, rows = got
+        try:
+            liq = info["liq_usd"]
             entry_ts_target = b["ts"] + 1800
             ce = next((r for r in rows if r[0] >= entry_ts_target), None)
             if not ce or ce[4] <= 0:
@@ -144,8 +178,11 @@ for w in todo:
             print(f"    {w[:8]}/{mint[:8]} err: {e}")
             return None
 
-    train_pnls = [x for x in (_sim(b) for b in train_buys) if x is not None]
-    test_pnls = [x for x in (_sim(b) for b in test_buys) if x is not None]
+    all_buys = train_buys + test_buys
+    with _cf.ThreadPoolExecutor(max_workers=3) as ex:
+        fetched = list(ex.map(_fetch, all_buys))
+    train_pnls = [x for x in (_compute(p) for p in fetched[:len(train_buys)]) if x is not None]
+    test_pnls = [x for x in (_compute(p) for p in fetched[len(train_buys):]) if x is not None]
 
     lt = {}
     if len(test_pnls) >= 3:
@@ -162,9 +199,10 @@ for w in todo:
           f"train_n={lt.get('train_n',0)} test_n={lt.get('n',0)} "
           f"test_exp={lt.get('expectancy',0):+.4f} {marker}")
 
-    # Persist
+    # Persist (plain INSERT for new wallets — never REPLACE: an existing row's
+    # first_seen_ts/created_ts must survive so per-day "new wallet" counts are honest)
     con.execute("""
-        INSERT OR REPLACE INTO wallet_profiles
+        INSERT INTO wallet_profiles
         (wallet, first_seen_ts, last_active_ts, total_trades, total_buys, total_sells,
          unique_tokens, median_buy_sol, mean_buy_sol, median_hold_min, median_pnl_pct,
          win_rate, profit_factor, expectancy_sol, pattern_cluster, is_smart_money, source,

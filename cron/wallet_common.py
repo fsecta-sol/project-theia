@@ -32,7 +32,10 @@ for sub in ("ohlcv", "pools", "sol_usd"):
 # GeckoTerminal free tier: ~20-30 req/min. We budget 30/min → 2s between requests,
 # shared across worker threads.
 RATE_PER_SEC = 30.0 / 60.0  # ~1 request per 2 seconds
-REQUEST_TIMEOUT = 10.0       # hard ceiling per API call (fixes #2 hang)
+# Hard ceiling per API call (fixes #2 hang). 60s: GeckoTerminal is slow on deep
+# OHLCV windows (limit=1000); 10s used to cut off requests that would have
+# succeeded, producing mass sim failures (train=0/test=0) in discovery profiling.
+REQUEST_TIMEOUT = 60.0
 
 
 class RateLimiter:
@@ -86,7 +89,7 @@ def gecko_ohlcv(dexdata, mint: str, before_ts: int = 0, ttl: float = 60.0):
     before_ts: end of the historical window (epoch). ttl: 60s for live feeds
     (monitor/screen), >3600 for immutable historical backtests.
     """
-    key = f"{mint}_{before_ts // 86400 if before_ts else 'now'}"
+    key = f"gecko_{mint}_{before_ts // 86400 if before_ts else 'now'}"
     cached = _load_cache("ohlcv", key, ttl)
     if cached:
         return cached["rows"]
@@ -103,6 +106,118 @@ def gecko_ohlcv(dexdata, mint: str, before_ts: int = 0, ttl: float = 60.0):
     rows = rows or []
     _save_cache("ohlcv", key, {"rows": rows})
     return rows
+
+
+def birdeye_ohlcv(birdeye, mint: str, before_ts: int = 0, ttl: float = 60.0,
+                  hours: int = 24) -> list:
+    """Birdeye token_ohlcv with disk cache + hard timeout.
+
+    Returns the SAME [[ts,o,h,l,c,v],...] row shape as gecko_ohlcv (drops the
+    7th 'vUsd' field). before_ts = end of window; window = [before_ts-hours*3600,
+    before_ts]. Birdeye indexes candles from a token's first trade (not launch);
+    a fresh micro-cap may return [] — gecko fallback handles that.
+
+    NOTE: Birdeye's 1m candles for tokens WITHOUT current volume come back FLAT
+    (o=h=l=c constant, v=0) once the token is past its active window — the
+    histogram data expires. ohlcv_for() filters those out and falls back to
+    Gecko; only active tokens keep birdeye as source.
+    """
+    key = f"bird_{mint}_{before_ts // 3600 if before_ts else 'now'}_{hours}h"
+    cached = _load_cache("ohlcv", key, ttl)
+    if cached:
+        return cached["rows"]
+    LIMITER.wait()
+    t_to = before_ts or int(time.time())
+    t_from = t_to - hours * 3600
+    items = _call_with_timeout(birdeye.token_ohlcv, mint, type="1m",
+                               time_from=t_from, time_to=t_to)
+    rows = []
+    for it in items or []:
+        try:
+            rows.append([int(it[0]), float(it[1]), float(it[2]),
+                         float(it[3]), float(it[4]), float(it[5])])
+        except (TypeError, ValueError, IndexError):
+            continue
+    _save_cache("ohlcv", key, {"rows": rows})
+    return rows
+
+
+def ohlcv_for(dexdata, birdeye, mint: str, before_ts: int = 0, ttl: float = 60.0,
+              hours: int = 24, dex_paths: tuple = ("pumpfundex", "raydium", "orca",
+                                                    "meteora", "pump")) -> tuple[list, str | None]:
+    """OHLCV for one mint: Birdeye first (active coverage), Gecko fallback,
+    Dexscreener bars last (res=15 full-history from launch; live window only).
+
+    Birdeye USD-quote candles are fine for chart-condition checks (price caps,
+    dip detection) where the pipeline compares ratios/levels, not absolute
+    USD amounts. Gecko token-quote is used when Birdeye has no index yet.
+    Dexscreener bars (res=15) as a last resort — its endpoint always returns
+    history from pool creation and cannot honor before_ts, so it only runs for
+    live windows (before_ts=0). dex_paths = dexscreener AMM path variants to
+    try (pumpfundex/raydium/orca/meteora/pump), first non-empty wins.
+    """
+    if birdeye is not None:
+        try:
+            rows = birdeye_ohlcv(birdeye, mint, before_ts=before_ts, ttl=ttl,
+                                 hours=hours)
+            # birdeye returns flat/no-trade candles for micro-caps that have
+            # index coverage but no real volume — prefer gecko's token-quote
+            # candles when the birdeye rows are all zeros/flat (fake coverage)
+            if rows:
+                active = sum(1 for r in rows
+                             if (r[5] or 0) > 0 and r[4] != r[1])
+                if active >= max(3, len(rows) // 5):
+                    return rows, "birdeye"
+        except Exception:
+            pass
+    try:
+        rows = gecko_ohlcv(dexdata, mint, before_ts=before_ts, ttl=ttl)
+        if rows:
+            return rows, "gecko"
+    except Exception:
+        pass
+    # Dexscreener bars fallback — live only (endpoint returns full history from
+    # launch, cannot select a window, so skip historical requests)
+    if before_ts == 0 and dexdata is not None:
+        try:
+            pool_info = _resolve_pool(dexdata, mint, ttl=ttl)
+            pool_addr = (pool_info or {}).get("pool")
+            if pool_addr:
+                for path in dex_paths:
+                    try:
+                        rows = _call_with_timeout(dexdata.dex_bars, pool_addr,
+                                                  dex=path, res=15, count=500)
+                        if rows:
+                            return rows, f"dex_{path}"
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+    return [], None
+
+
+def gecko_ohlcv_for(dexdata, mint: str, before_ts: int = 0, ttl: float = 86400.0,
+                    retries: int = 2, retry_delay: float = 5.0) -> list:
+    """OHLCV for one mint with bounded retries — the discovery profiler's hot path.
+
+    Discovery profiling fetches the same mint's OHLCV once per buy in the wallet's
+    history; with the 60s timeout a single slow Gecko response no longer kills the
+    sim, but retrying transient failures here is what turns train=0/test=0 (mass
+    sim-dropped) runs into real evaluations. Results are cached under the same key
+    as gecko_ohlcv (ttl=86400 = immutable historical window).
+    """
+    for attempt in range(retries + 1):
+        try:
+            rows = gecko_ohlcv(dexdata, mint, before_ts=before_ts, ttl=ttl)
+            if rows:
+                return rows
+            # empty result (pool miss / no data yet) — not worth retrying
+            return rows
+        except Exception:
+            if attempt >= retries:
+                raise
+            time.sleep(retry_delay * (attempt + 1))
+    return []
 
 
 def _resolve_pool(dexdata, mint: str, ttl: float = 300.0) -> dict | None:
@@ -125,12 +240,24 @@ def _resolve_pool(dexdata, mint: str, ttl: float = 300.0) -> dict | None:
                 return 0.0
         pools.sort(key=_liq, reverse=True)
         attr = pools[0].get("attributes", {})
+        # Gecko exposes reserve_in_usd (total USD) but not per-side reserves;
+        # back out base/quote qty from USD value + prices when both available.
+        liq_usd = _liq(pools[0])
+        price_usd = float(attr.get("base_token_price_usd") or 0)
+        quote_px_usd = float(attr.get("quote_token_price_usd") or 0)
+        reserves_base = reserves_quote = None
+        if price_usd > 0 and quote_px_usd > 0 and liq_usd > 0:
+            # quote qty = liq_usd / 2 / quote_px_usd (constant-product: 50/50 value)
+            reserves_quote = (liq_usd / 2.0) / quote_px_usd
+            reserves_base = (liq_usd / 2.0) / price_usd
         info = {
             "pool": pools[0].get("id", "").replace("solana_", ""),
-            "liq_usd": _liq(pools[0]),
-            "price_usd": float(attr.get("base_token_price_usd") or 0),
+            "liq_usd": liq_usd,
+            "price_usd": price_usd,
             "dex_id": attr.get("dex_id") or (pools[0].get("relationships", {})
                                              .get("dex", {}).get("data", {}).get("id", "")),
+            "reserves_base": reserves_base,
+            "reserves_quote": reserves_quote,
         }
     if not info:
         # fall 7: DexScreener pairs_by_token
@@ -144,6 +271,11 @@ def _resolve_pool(dexdata, mint: str, ttl: float = 300.0) -> dict | None:
                         "liq_usd": (p.get("liquidity") or {}).get("usd", 0),
                         "price_usd": float(p.get("priceUsd") or 0),
                         "dex_id": p.get("dexId") or "",
+                        # DexScreener liquidity.base/quote = AMM reserves
+                        # (base token qty / quote SOL qty) — enables
+                        # reconstructable paper fills (fix missing_reserve_snapshot)
+                        "reserves_base": (p.get("liquidity") or {}).get("base"),
+                        "reserves_quote": (p.get("liquidity") or {}).get("quote"),
                     }
                     break
         except Exception:
