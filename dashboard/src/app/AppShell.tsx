@@ -25,12 +25,13 @@ function App() {
   const isAuthView = AUTH_VIEWS.includes(ctx.activeView);
 
   useEffect(() => {
+    if (!ctx.hydrated) return;
     if (!ctx.isLoggedIn && !AUTH_VIEWS.includes(ctx.activeView)) {
       ctx.setPendingView(ctx.activeView);
       ctx.setActiveView("auth-login");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [ctx.hydrated]);
 
   return (
     <>

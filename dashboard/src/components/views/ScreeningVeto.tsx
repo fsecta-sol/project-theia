@@ -109,7 +109,7 @@ export function ScreeningVeto() {
                     <td className="num" style={st.washFail ? { color: "var(--st-fail)" } : undefined}>{st.wash}</td>
                     <td className="num" style={st.rugFail ? { color: "var(--st-fail)" } : undefined}>{st.rug}</td>
                     <td><span className={`s ${st.verdict === "pass" ? "s-ok" : "s-fail"}`}>{st.verdict}</span></td>
-                    <td className="muted">{st.reason}</td>
+                    <td className="small muted">{st.reason}</td>
                   </tr>
                 ))}
               </tbody>

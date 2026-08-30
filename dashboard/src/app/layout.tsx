@@ -1,15 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Roboto_Slab } from "next/font/google";
 import ClientOnly from "./ClientOnly";
 import "./globals.css";
-
-const robotoSlab = Roboto_Slab({
-  variable: "--font-roboto-slab",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Theia · Agent Dashboard",
@@ -46,7 +38,7 @@ const STRIP_EXT_ATTRS = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={robotoSlab.variable} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <Script id="strip-ext-attrs" strategy="beforeInteractive">
           {STRIP_EXT_ATTRS}

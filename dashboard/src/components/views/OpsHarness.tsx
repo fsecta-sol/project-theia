@@ -140,8 +140,8 @@ export function OpsHarness() {
               <thead><tr><th>{t("thCron")}</th><th>{t("thEnabled")}</th><th>{t("thSchedule")}</th><th>{t("thLastRun")}</th><th>{t("thNextRun")}</th><th>{t("thLastStatus")}</th><th>{t("thPhaseGate")}</th></tr></thead>
               <tbody>
                 {cronJobs.map((cj, i) => {
-                  const statusClass = cj.lastStatus === "ok" ? "s-ok" : cj.lastStatus === "warn" || cj.lastStatus === "manual" || cj.lastStatus === "parked" ? "s-warn" : "s-locked";
-                  const statusKey = cj.lastStatus === "ok" ? "stOk" : cj.lastStatus === "warn" ? "stOk" : cj.lastStatus === "parked" ? "stParked" : cj.lastStatus === "manual" ? "stManual" : "stLocked";
+                  const statusClass = cj.lastStatus === "ok" ? "s-ok" : cj.lastStatus === "manual" ? "s-warn" : "s-locked";
+                  const statusKey = cj.lastStatus === "ok" ? "stOk" : cj.lastStatus === "parked" ? "stParked" : cj.lastStatus === "manual" ? "stManual" : "stLocked";
                   return (
                     <tr key={i}>
                       <td><span className="mono">{cj.cron}</span></td>

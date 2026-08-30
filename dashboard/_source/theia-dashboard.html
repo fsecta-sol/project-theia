@@ -502,9 +502,9 @@ body.light .panel { box-shadow: 0 1px 2px oklch(45% 0 0 / 0.06); }
 .panel-head .grow { flex: 1; }
 .panel-body { padding: 14px 16px; }
 .grid-panels { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--gap-md); }
-.col-3 { grid-column: span 3; } .col-4 { grid-column: span 4; } .col-5 { grid-column: span 5; }
-.col-6 { grid-column: span 6; } .col-7 { grid-column: span 7; } .col-8 { grid-column: span 8; }
-.col-9 { grid-column: span 9; } .col-12 { grid-column: span 12; }
+.col-3 { grid-column: span 3; min-width: 0; } .col-4 { grid-column: span 4; min-width: 0; } .col-5 { grid-column: span 5; min-width: 0; }
+.col-6 { grid-column: span 6; min-width: 0; } .col-7 { grid-column: span 7; min-width: 0; } .col-8 { grid-column: span 8; min-width: 0; }
+.col-9 { grid-column: span 9; min-width: 0; } .col-12 { grid-column: span 12; min-width: 0; }
 @media (max-width: 1100px) { .col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9 { grid-column: span 12; } }
 @media (max-width: 920px) { .grid-panels { display: block; } .grid-panels > * { margin-bottom: var(--gap-md); } }
 .acc-view .grid-panels { align-items: start; }
@@ -611,7 +611,26 @@ body.light .panel { box-shadow: 0 1px 2px oklch(45% 0 0 / 0.06); }
   text-align: left; font-family: var(--font-mono); font-weight: 500;
   font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
   padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  transition: color 0.15s ease;
 }
+.dtable th.th-info { cursor: help; }
+.dtable th.th-info:hover, .dtable th.th-info:focus-visible { color: var(--fg); }
+.dtable th.th-info:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.th-tip {
+  position: absolute; top: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: var(--raised); color: var(--fg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 11px; width: max-content; max-width: 230px;
+  font-family: var(--font-ui); font-size: 11.5px; font-weight: 400; line-height: 1.5;
+  letter-spacing: normal; text-transform: none; white-space: normal;
+  box-shadow: var(--shadow); opacity: 0; pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease; z-index: 40;
+}
+.dtable th.num .th-tip { left: auto; right: 0; transform: translateY(-4px); }
+.dtable th.th-tip-left .th-tip { left: 0; transform: translateY(-4px); }
+.dtable th.th-info:hover .th-tip, .dtable th.th-info:focus-visible .th-tip { opacity: 1; transform: translateX(-50%) translateY(0); }
+.dtable th.num.th-info:hover .th-tip, .dtable th.num.th-info:focus-visible .th-tip,
+.dtable th.th-tip-left.th-info:hover .th-tip, .dtable th.th-tip-left.th-info:focus-visible .th-tip { transform: translateY(0); }
 .dtable td { padding: 8px 10px; border-bottom: 1px solid color-mix(in oklch, var(--border) 60%, transparent); vertical-align: middle; }
 .dtable tbody tr { transition: background 0.1s ease; cursor: default; }
 .dtable tbody tr:hover { background: var(--fg-soft); }
@@ -619,6 +638,10 @@ body.light .panel { box-shadow: 0 1px 2px oklch(45% 0 0 / 0.06); }
 .dtable th.num { text-align: right; }
 .dtable .sub { font-size: 10px; color: var(--muted); display: block; }
 .dtable .addr { font-family: var(--font-mono); font-size: 11px; white-space: nowrap; }
+.wallet-td-inner { display: inline-flex; align-items: center; gap: 4px; }
+.wallet-td-inner .wallet-cell { display: inline-flex; flex-direction: column; }
+.wallet-td-inner .copy-btn { width: 24px; height: 24px; flex-shrink: 0; }
+.wallet-td-inner .copy-btn svg { width: 13px; height: 13px; }
 .row-click { cursor: pointer !important; }
 .row-active { background: var(--accent-soft) !important; box-shadow: inset 2px 0 0 var(--accent); }
 
@@ -777,6 +800,7 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
 .fstage .bar.locked-stage .fill { background: transparent; border-right: none; }
 .fstage .bar .locknote { font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
 .fstage .drops { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.fstage .sname .sicon { width: 15px; height: 15px; flex-shrink: 0; color: var(--muted); }
 .drop {
   display: inline-flex; align-items: center; gap: 5px;
   font-family: var(--font-mono); font-size: 9.5px;
@@ -805,6 +829,123 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
 .legacy-flow.lf-h .lf-chip { flex: none; width: 100%; font-size: 12.5px; padding: 8px 10px; background: var(--bg); }
 .legacy-flow.lf-h .lf-src { white-space: normal; line-height: 1.4; }
 .legacy-flow.lf-h .lf-arrow { padding-left: 0; align-self: center; font-size: 14px; display: flex; align-items: center; }
+
+/* live pipeline flow diagram — workflow-canvas style nodes */
+.flow-live { display: inline-flex; align-items: center; gap: 6px; }
+.flow-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--st-ok); flex-shrink: 0; animation: flowLiveBlink 1.6s ease-in-out infinite; }
+@keyframes flowLiveBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.pipe-canvas {
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background-color: var(--bg);
+  background-image: radial-gradient(color-mix(in oklch, var(--border) 90%, transparent) 1.2px, transparent 1.2px);
+  background-size: 16px 16px;
+  padding: 22px clamp(14px, 3vw, 32px);
+}
+.pipe-flow { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.pipe-row { display: flex; align-items: flex-start; width: 100%; max-width: 900px; gap: 8px; }
+.pipe-row-connector { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 7px 0; }
+.pipe-row-connector .pipe-connector { width: 2px; height: 18px; }
+.pipe-node { display: flex; flex-direction: column; flex: 1 1 0; min-width: 110px; }
+.pipe-card {
+  border: 1px solid var(--border); border-radius: 13px; background: var(--raised);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 9px; position: relative;
+  transition: border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+}
+.pipe-card-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pipe-ico {
+  width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+  display: grid; place-items: center;
+  transition: color 0.35s ease, border-color 0.35s ease, background 0.35s ease;
+}
+.pipe-ico svg { width: 18px; height: 18px; }
+.pipe-title-wrap { min-width: 0; }
+.pipe-label { font-size: 13px; font-weight: 650; color: var(--fg); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipe-meta { font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.pipe-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.pipe-count { font-family: var(--font-mono); font-size: 13.5px; font-weight: 650; color: var(--fg); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pipe-port { width: 8px; height: 8px; border-radius: 50%; background: var(--st-ok); box-shadow: 0 0 0 3px color-mix(in oklch, var(--st-ok) 22%, transparent); flex-shrink: 0; }
+.pipe-node.locked .pipe-port { background: var(--muted); box-shadow: none; }
+.pipe-node.locked .pipe-card { border-style: dashed; }
+.pipe-node.locked .pipe-ico, .pipe-node.locked .pipe-count, .pipe-node.locked .pipe-meta { opacity: 0.6; }
+.pipe-node.pulse .pipe-card {
+  border-color: var(--accent-bord); background: var(--accent-soft);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 10%, transparent);
+}
+.pipe-node.pulse .pipe-ico { color: var(--fg); border-color: var(--accent-bord); }
+.pipe-connector-wrap { flex: 0 1 56px; min-width: 56px; display: flex; flex-direction: column; align-items: center; margin-top: 27px; position: relative; }
+.pipe-connector { width: 100%; height: 2px; background: var(--border); position: relative; }
+.pipe-connector.locked { background: repeating-linear-gradient(90deg, var(--border) 0 4px, transparent 4px 9px); }
+.pipe-row-connector .pipe-connector.locked { background: repeating-linear-gradient(180deg, var(--border) 0 4px, transparent 4px 9px); }
+.pipe-connector .dot {
+  position: absolute; top: 50%; left: 0; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); opacity: 0; transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px 1px color-mix(in oklch, var(--accent) 65%, transparent);
+}
+.pipe-connector.run .dot { animation: pipeDotMove 0.85s ease-in-out; }
+@keyframes pipeDotMove { 0% { left: 0; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+.pipe-edge-label {
+  font-family: var(--font-mono); font-size: 10px; color: var(--muted); white-space: nowrap;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 20px;
+  padding: 4px 10px; position: relative; z-index: 2;
+}
+.pipe-connector-wrap .pipe-edge-label {
+  position: absolute; top: 1px; left: 50%; transform: translate(-50%, -50%); margin-top: 0;
+}
+.pipe-row-label {
+  font-family: var(--font-mono); font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;
+  width: 100%; max-width: 900px; margin-bottom: 8px;
+}
+.pipe-row + .pipe-row-label { margin-top: 4px; }
+
+/* pipeline-v4: scope toggle, hover-lift, tooltips, inline example rows */
+.scope-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 2px; gap: 2px; background: var(--raised); flex-shrink: 0; }
+.scope-opt {
+  font-family: var(--font-mono); font-size: 10.5px; padding: 5px 10px; border-radius: 6px;
+  color: var(--muted); background: transparent; border: none; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.scope-opt:hover { color: var(--fg); }
+.scope-opt.active { background: var(--accent); color: var(--bg); font-weight: 650; }
+.scope-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pipe-card { cursor: default; }
+.pipe-card:hover, .pipe-card:focus-visible { transform: translateY(-2px); box-shadow: 0 10px 20px -12px oklch(0% 0 0 / 0.4); border-color: var(--fg-mut); outline: none; }
+.pipe-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pipe-card { transition: border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease, transform 0.15s ease; }
+.pipe-tip {
+  position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%) translateY(4px);
+  background: var(--raised); color: var(--fg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; width: max-content; max-width: 210px;
+  font-size: 11px; line-height: 1.4; box-shadow: var(--shadow);
+  opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 30;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.pipe-tip b { font-family: var(--font-mono); font-size: 10px; color: var(--accent); font-weight: 650; letter-spacing: 0.02em; }
+.pipe-tip span { color: var(--muted); }
+.pipe-card:hover .pipe-tip, .pipe-card:focus-visible .pipe-tip { opacity: 1; transform: translateX(-50%) translateY(0); }
+.pipe-count-split { color: var(--muted); margin: 0 3px; font-weight: 500; }
+.pipe-count-veto { color: var(--st-fail); }
+.pipe-example { margin-top: 2px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 11px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+#pipeFreshness.stale-text { color: var(--st-warn); }
+@media (max-width: 1100px) {
+  .pipe-node { min-width: 92px; }
+  .pipe-ico { width: 32px; height: 32px; }
+  .pipe-ico svg { width: 16px; height: 16px; }
+  .pipe-label { font-size: 12px; }
+}
+@media (max-width: 700px) {
+  .pipe-row { flex-direction: column; align-items: stretch; gap: 0; max-width: none; }
+  .pipe-row .pipe-node { width: 100%; max-width: none; min-width: 0; }
+  .pipe-row .pipe-connector-wrap {
+    flex: none; width: auto; min-width: 0; margin-top: 2px; margin-left: 27px;
+    flex-direction: row; align-items: center; gap: 8px; height: 26px; justify-content: flex-start;
+  }
+  .pipe-row .pipe-connector-wrap .pipe-connector { width: 2px; height: 100%; }
+  .pipe-row .pipe-connector-wrap .pipe-edge-label { position: static; transform: none; }
+  .pipe-canvas { padding: 18px 12px; }
+  .pipe-row-label, .pipe-flow { max-width: none; }
+  .panel-head .scope-toggle { margin-left: auto; }
+}
 
 /* where-the-volume-dies: collapse strip + per-column drop bars */
 .collapse { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -917,6 +1058,154 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
 .lock-banner .lock-ico svg { width: 15px; height: 15px; }
 .lock-banner .lt { font-size: 12.5px; font-weight: 600; }
 .lock-banner .lc { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+/* ─── paper positions & entry journal (V5) ────────────────────── */
+.pos-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.pos-stat { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); padding: 14px 16px; }
+.pos-stat-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.pos-stat-value { font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 650; letter-spacing: -0.02em; margin-top: 6px; line-height: 1; }
+.pos-stat-note { font-size: 11px; color: var(--muted); margin-top: 7px; line-height: 1.4; }
+@media (max-width: 920px) { .pos-stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .pos-stat-grid { grid-template-columns: 1fr; } }
+
+.pos-filter { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.pos-filter-opt {
+  font-family: var(--font-mono); font-size: 10.5px; padding: 5px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.pos-filter-opt:hover { color: var(--fg); border-color: var(--fg-mut); }
+.pos-filter-opt.active { color: var(--accent); border-color: var(--accent-bord); background: var(--accent-soft); font-weight: 650; }
+.pos-filter-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.pos-token-cell { display: inline-flex; align-items: center; gap: 6px; }
+.pos-expand-btn {
+  width: 22px; height: 22px; flex-shrink: 0; display: grid; place-items: center; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--raised); color: var(--muted); cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.pos-expand-btn:hover { color: var(--fg); background: var(--surface); }
+.pos-expand-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pos-expand-btn svg { width: 12px; height: 12px; transition: transform 0.15s ease; }
+.pos-expand-btn.open svg { transform: rotate(90deg); }
+.pos-token-meta { display: inline-flex; flex-direction: column; }
+.dtable td.pos-token-td { position: sticky; left: 0; background: var(--surface); z-index: 1; }
+.dtable th.pos-token-th { position: sticky; left: 0; z-index: 3; }
+
+.pos-detail-row td { background: var(--bg); padding: 0; }
+.pos-detail { padding: 16px 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 24px; }
+.pos-detail-group h4 { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.pos-detail-group .kv dd { font-size: 12px; }
+@media (max-width: 920px) { .pos-detail { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .pos-detail { grid-template-columns: 1fr; } }
+
+.pos-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+.pos-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); padding: 14px 16px; transition: border-color 0.15s ease, transform 0.15s ease; }
+.pos-card:hover { border-color: var(--fg-mut); transform: translateY(-2px); }
+.pos-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.pos-card-token { font-weight: 650; font-size: 13px; }
+.pos-card-mint { font-family: var(--font-mono); font-size: 10px; color: var(--muted); display: block; margin-top: 2px; }
+.pos-card-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-top: 1px dashed var(--border); }
+.pos-card-row .l { color: var(--muted); }
+.pos-card-empty { grid-column: 1 / -1; }
+
+@media (max-width: 700px) {
+  .pos-stat-grid { grid-template-columns: 1fr 1fr; }
+  .pos-card-grid { grid-template-columns: 1fr; }
+}
+
+/* ─── wallet discovery scan history (V2 tab) ──────────────────── */
+.pill.sample { color: var(--muted); border: 1px dashed var(--border); background: transparent; }
+.wm-chip {
+  width: 22px; height: 22px; flex-shrink: 0; border-radius: 6px; display: grid; place-items: center;
+  background: var(--raised); border: 1px solid var(--border); color: var(--muted);
+  font-family: var(--font-mono); font-size: 9px; font-weight: 650; text-transform: uppercase;
+}
+
+.dtable th[data-sort] { cursor: pointer; user-select: none; }
+.dtable th[data-sort]:hover { color: var(--fg); }
+.dtable th[data-sort] .sort-arrow { display: inline-block; margin-left: 3px; opacity: 0.35; font-size: 9px; }
+.dtable th[data-sort].sort-active .sort-arrow { opacity: 1; color: var(--accent); }
+.dtable th[data-sort]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.pager { display: inline-flex; align-items: center; gap: 8px; }
+.pager .btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
+.pager .btn-icon:disabled:hover { background: transparent; color: var(--muted); }
+.pager-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); min-width: 44px; text-align: center; }
+
+.scan-chart-legend { display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+.scan-chart-legend .li { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+.scan-chart-legend .sw { width: 12px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+.scan-chart-legend .sw.scanned { background: var(--fg-mut); }
+.scan-chart-legend .sw.passed { background: var(--accent); }
+.scan-chart-wrap { position: relative; }
+.scan-chart-wrap svg { width: 100%; height: auto; display: block; }
+.scan-tooltip {
+  position: absolute; pointer-events: none; background: var(--raised); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 11px; line-height: 1.5; box-shadow: var(--shadow);
+  transform: translate(-50%, -100%); margin-top: -10px; white-space: nowrap; z-index: 20;
+}
+.scan-tooltip b { font-family: var(--font-mono); color: var(--fg); }
+.scan-tooltip .stt { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+.scan-tooltip .str { color: var(--st-fail); }
+
+#scanFunnelFlow .pipe-row { max-width: none; flex-wrap: nowrap; gap: 16px; }
+#scanFunnelFlow .pipe-node { min-width: 104px; flex: 1 1 0; }
+#scanFunnelFlow .pipe-connector-wrap { flex: 0 1 40px; min-width: 28px; }
+#scanFunnelFlow .pipe-card { padding: 12px 10px; gap: 7px; }
+#scanFunnelFlow .pipe-label { font-size: 10.5px; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; overflow-wrap: break-word; }
+#scanFunnelFlow .pipe-meta { font-size: 8.5px; white-space: normal; overflow: visible; text-overflow: clip; }
+#scanFunnelFlow .pipe-count { font-size: 12.5px; overflow: visible; text-overflow: clip; }
+#scanFunnelFlow .pipe-card-bottom { padding-top: 7px; }
+#scanFunnelFlow .pipe-row-connector { padding: 4px 0; }
+@media (max-width: 700px) {
+  #scanFunnelFlow .pipe-row { gap: 0; }
+  #scanFunnelFlow .pipe-node { min-width: 0; }
+  #scanFunnelFlow .pipe-connector-wrap { flex: none; width: auto; min-width: 0; }
+}
+
+.scan-sens-result { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.scan-sens-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; }
+.scan-sens-row.current { border-color: var(--accent-bord); background: var(--accent-soft); }
+.scan-sens-row .n { font-family: var(--font-mono); font-weight: 650; }
+
+.scan-hist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.scan-hist h4 { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.scan-hist svg { width: 100%; height: auto; display: block; }
+@media (max-width: 920px) { .scan-hist-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .scan-hist-grid { grid-template-columns: 1fr; } }
+
+.scan-drawer-scrim {
+  position: fixed; inset: 0; background: oklch(0% 0 0 / 0.5); z-index: 90;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+}
+.scan-drawer-scrim.open { opacity: 1; pointer-events: auto; }
+.scan-drawer {
+  position: fixed; top: 0; right: 0; height: 100%; width: min(460px, 100vw);
+  background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow);
+  z-index: 91; display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform 0.22s ease;
+}
+.scan-drawer.open { transform: translateX(0); }
+.scan-drawer-head { display: flex; align-items: flex-start; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+.scan-drawer-title { font-size: 14px; font-weight: 650; }
+.scan-drawer-body { padding: 16px 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 18px; }
+.scan-drawer-body h4 { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.scan-spark-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; }
+.scan-spark-row .l { font-size: 11.5px; color: var(--muted); width: 84px; flex-shrink: 0; }
+.scan-spark-row svg { flex: 1; height: 28px; }
+.scan-spark-row .v { font-family: var(--font-mono); font-size: 11.5px; width: 54px; text-align: right; flex-shrink: 0; }
+.scan-delta-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 6px 0; border-top: 1px dashed var(--border); }
+.scan-delta-row .l { color: var(--muted); }
+.scan-delta-row .d { font-family: var(--font-mono); }
+.scan-gate-strip { display: flex; gap: 3px; flex-wrap: wrap; }
+.scan-gate-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.scan-gate-dot.pass { background: var(--st-ok); }
+.scan-gate-dot.fail { background: var(--st-fail); }
+@media (max-width: 560px) {
+  .scan-drawer { width: 100vw; }
+  .scan-spark-row .l { width: 64px; font-size: 10.5px; }
+}
 
 /* ─── knowledge graph (V6) ─────────────────────────────────────── */
 .kg { position: relative; }
@@ -1393,133 +1682,131 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
   <section id="view-v1" class="view" data-od-id="v1-daily-pipeline">
     <div class="grid-panels">
       <div class="col-12 panel" data-od-id="pipeline-funnel">
-        <div class="panel-head">
-          <h3 data-i18n="hFunnel">Daily funnel — the collapse must be visible</h3>
+        <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+          <h3 data-i18n="hFunnel">Pipeline flow — the collapse must be visible</h3>
           <span class="grow"></span>
-          <span class="hint" data-i18n="htWindowVs">window 06:00 → 06:00 · vs yesterday</span>
+          <span class="hint flow-live"><span class="flow-live-dot"></span><span data-i18n="hintPipeLive">live · pulses every ~6s</span></span>
+          <div class="scope-toggle" id="pipeScopeToggle" role="tablist" aria-label="Pipeline scope">
+            <button type="button" class="scope-opt active" data-scope="all" role="tab" aria-selected="true" data-i18n="scopeAll">All-time</button>
+            <button type="button" class="scope-opt" data-scope="h24" role="tab" aria-selected="false" data-i18n="scope24h">Last 24h</button>
+          </div>
         </div>
         <div class="panel-body">
-          <div class="small muted" style="margin-bottom:10px;">Bar width is on a compressed scale (∝ volume<sup>0.3</sup>) so the tail stages stay readable — the numbers, not the bars, are the source of truth. Baseline: 12,847 harvested.</div>
-          <div class="funnel">
-            <div class="fstage">
-              <div class="sleft">
-                <div class="sname"><span class="seq">01</span> GMGN harvest</div>
-                <div class="slat">latency 24s · probe tier</div>
-              </div>
-              <div class="sright">
-                <div class="bar">
-                  <span class="fill" style="width:100%"></span>
-                  <span class="ct num">12,847</span><span class="csub">in</span>
-                  <span class="grow"></span>
-                  <span class="csub">→ 12,847 out</span>
-                  <span class="vd delta-flat">+6.2% in vs yday</span>
+          <div class="pipe-canvas">
+          <div class="pipe-flow" id="pipeFlow">
+          <div class="pipe-row-label" data-i18n="rowDetect">Signal detection</div>
+          <div class="pipe-row">
+            <div class="pipe-node" data-stage="harvest">
+              <div class="pipe-card" tabindex="0">
+                <div class="pipe-tip"><b data-i18n="tipHarvestT">wallet_profiles</b><span data-i18n="tipHarvestD">GMGN scraper · raw wallet harvest</span></div>
+                <div class="pipe-card-top">
+                  <div class="pipe-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v10M8 9l4 4 4-4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
+                  <div class="pipe-title-wrap"><div class="pipe-label" data-i18n="stHarvestLbl">GMGN harvest</div><div class="pipe-meta" data-i18n="stHarvestMeta">wallet_profiles</div></div>
                 </div>
-                <div class="drops"><span class="drop">no drop at this stage</span></div>
+                <div class="pipe-card-bottom"><span class="pipe-count num" data-bind="harvest">12,847</span><span class="pipe-port"></span></div>
               </div>
             </div>
-            <div class="fstage">
-              <div class="sleft">
-                <div class="sname"><span class="seq">02</span> Filter</div>
-                <div class="slat">latency 41s · compute</div>
-              </div>
-              <div class="sright">
-                <div class="bar">
-                  <span class="fill" style="width:37%"></span>
-                  <span class="ct num">473</span><span class="csub">out of 12,847</span>
+            <div class="pipe-connector-wrap"><div class="pipe-connector"><span class="dot"></span></div><span class="pipe-edge-label">24s</span></div>
+            <div class="pipe-node" data-stage="qualify">
+              <div class="pipe-card" tabindex="0">
+                <div class="pipe-tip"><b data-i18n="tipQualifyT">wallet_profiles.qualified</b><span data-i18n="tipQualifyD">tag rules + dedup by address</span></div>
+                <div class="pipe-card-top">
+                  <div class="pipe-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.2 2.2L16 9.5"/></svg></div>
+                  <div class="pipe-title-wrap"><div class="pipe-label" data-i18n="stQualifyLbl">Qualify</div><div class="pipe-meta" data-i18n="stQualifyMeta">tags · dup gate</div></div>
                 </div>
-                <div class="drops">
-                  <span class="drop"><b>9,842</b> no real trade history</span>
-                  <span class="drop"><b>2,051</b> below PnL floor</span>
-                  <span class="drop"><b>481</b> activity too old</span>
-                </div>
+                <div class="pipe-card-bottom"><span class="pipe-count num" data-bind="qualify">3,214</span><span class="pipe-port"></span></div>
               </div>
             </div>
-            <div class="fstage">
-              <div class="sleft">
-                <div class="sname"><span class="seq">03</span> Buy signals</div>
-                <div class="slat">latency 6m 10s · on-chain match</div>
-              </div>
-              <div class="sright">
-                <div class="bar">
-                  <span class="fill" style="width:23%"></span>
-                  <span class="ct num">96</span><span class="csub">out of 473</span>
-                  <span class="grow"></span>
-                  <span class="vd delta-dn">−12% signals vs yday</span>
+            <div class="pipe-connector-wrap"><div class="pipe-connector"><span class="dot"></span></div><span class="pipe-edge-label" data-i18n="edgeWatchlist">watchlist</span></div>
+            <div class="pipe-node" data-stage="wallets">
+              <div class="pipe-card" tabindex="0">
+                <div class="pipe-tip"><b data-i18n="tipWalletsT">wallet_profiles.status</b><span data-i18n="tipWalletsD">active smart-wallet watchlist size</span></div>
+                <div class="pipe-card-top">
+                  <div class="pipe-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M16.5 13h.01"/></svg></div>
+                  <div class="pipe-title-wrap"><div class="pipe-label" data-i18n="stWalletsLbl">Smart wallets</div><div class="pipe-meta" data-i18n="stWalletsMeta">active count</div></div>
                 </div>
-                <div class="drops">
-                  <span class="drop"><b>251</b> stale signal (&gt;30m)</span>
-                  <span class="drop"><b>82</b> no on-chain buy match</span>
-                  <span class="drop"><b>44</b> duplicate</span>
-                </div>
+                <div class="pipe-card-bottom"><span class="pipe-count num" data-bind="wallets">186</span><span class="pipe-port"></span></div>
               </div>
             </div>
-            <div class="fstage">
-              <div class="sleft">
-                <div class="sname"><span class="seq">04</span> Safety veto</div>
-                <div class="slat">latency 12s · security lib</div>
-              </div>
-              <div class="sright">
-                <div class="bar">
-                  <span class="fill" style="width:21.5%"></span>
-                  <span class="ct num">78</span><span class="csub">passed of 96</span>
-                  <span class="grow"></span>
-                  <span class="vd delta-flat">veto rate ≈ yesterday</span>
+            <div class="pipe-connector-wrap"><div class="pipe-connector"><span class="dot"></span></div><span class="pipe-edge-label">6m 10s</span></div>
+            <div class="pipe-node" data-stage="buy">
+              <div class="pipe-card" tabindex="0">
+                <div class="pipe-tip"><b data-i18n="tipBuyT">wallet_signals</b><span data-i18n="tipBuyD">on-chain buys matched to watchlist</span></div>
+                <div class="pipe-card-top">
+                  <div class="pipe-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg></div>
+                  <div class="pipe-title-wrap"><div class="pipe-label" data-i18n="stBuyLbl">Buy signal</div><div class="pipe-meta" data-i18n="stBuyMeta">wallet buys detected</div></div>
                 </div>
-                <div class="drops">
-                  <span class="drop"><b>6</b> wash_trader tag</span>
-                  <span class="drop"><b>5</b> trade_count too low</span>
-                  <span class="drop"><b>4</b> liquidity gate</span>
-                  <span class="drop"><b>2</b> honeypot</span>
-                  <span class="drop"><b>1</b> rug_score &gt; threshold</span>
-                </div>
-              </div>
-            </div>
-            <div class="fstage">
-              <div class="sleft">
-                <div class="sname"><span class="seq">05</span> Paper entry ≤ 30m</div>
-                <div class="slat">phase-gated</div>
-              </div>
-              <div class="sright">
-                <div class="bar locked-stage">
-                  <span class="fill" style="width:100%"></span>
-                  <span class="ct num">78</span><span class="csub">waiting at gate</span>
-                  <span class="grow"></span>
-                  <span class="locknote" data-i18n="lnLocked">◌ Phase 5 locked</span>
-                </div>
-                <div class="drops"><span class="drop gate"><b>78</b> phase gate: paper trading not enabled</span></div>
-              </div>
-            </div>
-            <div class="fstage">
-              <div class="sleft">
-                <div class="sname"><span class="seq">06</span> Exit</div>
-                <div class="slat">phase-gated</div>
-              </div>
-              <div class="sright">
-                <div class="bar locked-stage">
-                  <span class="fill" style="width:12%"></span>
-                  <span class="ct num">0</span><span class="csub">trades</span>
-                </div>
-                <div class="drops"><span class="drop gate">0 entered yesterday</span></div>
-              </div>
-            </div>
-            <div class="fstage">
-              <div class="sleft">
-                <div class="sname"><span class="seq">07</span> Archive</div>
-                <div class="slat">append-only ledger</div>
-              </div>
-              <div class="sright">
-                <div class="bar locked-stage">
-                  <span class="fill" style="width:12%"></span>
-                  <span class="ct num">0</span><span class="csub">rows</span>
-                </div>
-                <div class="drops"><span class="drop gate" data-i18n="dropEmpty">empty until exits exist</span></div>
+                <div class="pipe-card-bottom"><span class="pipe-count num" data-bind="buy">96</span><span class="pipe-port"></span></div>
               </div>
             </div>
           </div>
-          <div class="prov" style="margin-top:14px;">
-            <span class="src dc dc-calc">= our compute</span>
-            <span class="ts">pipeline_metrics · aggregated per stage from store rows</span>
-            <span class="ts">06:00 UTC · fresh</span>
+          <div class="pipe-row-connector"><div class="pipe-connector"><span class="dot"></span></div><span class="pipe-edge-label">12s</span></div>
+          <div class="pipe-row-label" data-i18n="rowExec">Trade lifecycle</div>
+          <div class="pipe-row">
+            <div class="pipe-node" data-stage="screen">
+              <div class="pipe-card" tabindex="0">
+                <div class="pipe-tip"><b data-i18n="tipScreenT">screens.veto_reason</b><span data-i18n="tipScreenD">safety veto · pass / deny split</span></div>
+                <div class="pipe-card-top">
+                  <div class="pipe-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+                  <div class="pipe-title-wrap"><div class="pipe-label" data-i18n="stScreenLbl">Screen</div><div class="pipe-meta" data-i18n="stScreenMeta">veto / pass</div></div>
+                </div>
+                <div class="pipe-card-bottom">
+                  <span class="pipe-count num"><span data-bind="screenPass">78</span><span class="pipe-count-split">/</span><span class="pipe-count-veto" data-bind="screenVeto">18</span></span>
+                  <span class="pipe-port"></span>
+                </div>
+                <div class="pipe-example">
+                  <span class="pill" data-bind-cls="screenCls" data-bind="screenEx">veto · low liquidity</span>
+                </div>
+              </div>
+            </div>
+            <div class="pipe-connector-wrap"><div class="pipe-connector"><span class="dot"></span></div><span class="pipe-edge-label">4s</span></div>
+            <div class="pipe-node" data-stage="entry">
+              <div class="pipe-card" tabindex="0">
+                <div class="pipe-tip"><b data-i18n="tipEntryT">paper_trades</b><span data-i18n="tipEntryD">status = open · position at entry price</span></div>
+                <div class="pipe-card-top">
+                  <div class="pipe-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3h6v18h-6"/><path d="M3 12h12M11 8l4 4-4 4"/></svg></div>
+                  <div class="pipe-title-wrap"><div class="pipe-label" data-i18n="stEntryLbl">Paper entry</div><div class="pipe-meta" data-i18n="stEntryMeta">paper_trades</div></div>
+                </div>
+                <div class="pipe-card-bottom"><span class="pipe-count num" data-bind="entry">78</span><span class="pipe-port"></span></div>
+              </div>
+            </div>
+            <div class="pipe-connector-wrap"><div class="pipe-connector"><span class="dot"></span></div><span class="pipe-edge-label" data-i18n="edgeLive">live</span></div>
+            <div class="pipe-node" data-stage="monitor">
+              <div class="pipe-card" tabindex="0">
+                <div class="pipe-tip"><b data-i18n="tipMonitorT">price_snapshots</b><span data-i18n="tipMonitorD">mark price · guard status, not a countdown</span></div>
+                <div class="pipe-card-top">
+                  <div class="pipe-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                  <div class="pipe-title-wrap"><div class="pipe-label" data-i18n="stMonitorLbl">Monitor</div><div class="pipe-meta" data-i18n="stMonitorMeta">open positions</div></div>
+                </div>
+                <div class="pipe-card-bottom"><span class="pipe-count num" data-bind="monitor">12</span><span class="pipe-port"></span></div>
+                <div class="pipe-example">
+                  <span class="pill" data-bind-cls="monitorPnlCls" data-bind="monitorPnl">+14.2%</span>
+                  <span class="small muted" data-bind="monitorGuard">guard: trailing dip 8%</span>
+                </div>
+              </div>
+            </div>
+            <div class="pipe-connector-wrap"><div class="pipe-connector"><span class="dot"></span></div><span class="pipe-edge-label" data-i18n="edgeHold">≤ hold</span></div>
+            <div class="pipe-node" data-stage="exit">
+              <div class="pipe-card" tabindex="0">
+                <div class="pipe-tip"><b data-i18n="tipExitT">archives</b><span data-i18n="tipExitD">net PnL after modeled gas + fees + slippage</span></div>
+                <div class="pipe-card-top">
+                  <div class="pipe-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="5" rx="1.2"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg></div>
+                  <div class="pipe-title-wrap"><div class="pipe-label" data-i18n="stExitLbl">Exit / Archive</div><div class="pipe-meta" data-i18n="stExitMeta">archives</div></div>
+                </div>
+                <div class="pipe-card-bottom"><span class="pipe-count num" data-bind="exit">66</span><span class="pipe-port"></span></div>
+                <div class="pipe-example">
+                  <span class="pill" data-bind-cls="exitPnlCls" data-bind="exitPnl">+6.8%</span>
+                  <span class="small muted" data-bind="exitNote">net of gas + fees + slippage</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+          </div>
+          <div class="prov" style="margin-top:14px;flex-wrap:wrap;">
+            <span class="src dc dc-calc" data-i18n="srcOwn">= our compute</span>
+            <span class="ts" data-i18n="provApi">/api/pipeline · funnel, latency by action, veto split, activity24h, avg hold</span>
+            <span class="ts" id="pipeFreshness">updated 2m ago · fresh</span>
           </div>
         </div>
       </div>
@@ -1532,48 +1819,47 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
         </div>
         <div class="panel-body">
           <div class="collapse">
-            <div class="cstep"><span class="cval">12,847<small>harvested</small></span><span class="carrow">→</span></div>
-            <div class="cstep"><span class="cval">473<small>filtered</small></span><span class="carrow">→</span></div>
-            <div class="cstep"><span class="cval">96<small>signals</small></span><span class="carrow">→</span></div>
-            <div class="cstep"><span class="cval">78<small>survive veto</small></span></div>
-            <div class="cstep" style="margin-left:auto;"><span class="pill accent"><span>−99.4%</span> <span data-i18n="stHarvest">from harvest</span></span></div>
+            <div class="cstep"><span class="cval">12,847<small data-i18n="cHarvested">harvested</small></span><span class="carrow">→</span></div>
+            <div class="cstep"><span class="cval">3,214<small data-i18n="cQualified">qualified</small></span><span class="carrow">→</span></div>
+            <div class="cstep"><span class="cval">96<small data-i18n="cSignals">buy signals</small></span><span class="carrow">→</span></div>
+            <div class="cstep"><span class="cval">78<small data-i18n="cScreened">screened in</small></span></div>
+            <div class="cstep" style="margin-left:auto;"><span class="pill accent"><span>81.3%</span> <span data-i18n="stScreenRate">screen pass rate</span></span></div>
           </div>
           <div class="notes-grid" style="margin-top:14px;">
             <div class="notes-col">
-              <div class="nt"><span class="nval">96.3%</span> 1 · Filter is the biggest wall</div>
-              <p class="np muted">Most of the harvest has no real trade history. The filter is doing its job; the harvest tier is the bottleneck to watch.</p>
+              <div class="nt"><span class="nval">75%</span> <span data-i18n="noteQualifyT">1 · Qualify is the biggest wall</span></div>
+              <p class="np muted" data-i18n="noteQualifyP">Most harvested wallets fail the tag rules or dedupe against an address already on the watchlist.</p>
               <div class="dbar">
-                <div class="dbrow"><span class="dbl">no trade history</span><span class="dbtr"><i style="width:97%"></i></span><span class="dbn">9,842</span></div>
-                <div class="dbrow"><span class="dbl">below PnL floor</span><span class="dbtr"><i style="width:20%"></i></span><span class="dbn">2,051</span></div>
-                <div class="dbrow"><span class="dbl">activity too old</span><span class="dbtr"><i style="width:5%"></i></span><span class="dbn">481</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rDupAddr">duplicate address</span><span class="dbtr"><i style="width:100%"></i></span><span class="dbn">6,441</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rNoTag">no qualifying tag</span><span class="dbtr"><i style="width:52%"></i></span><span class="dbn">3,192</span></div>
               </div>
             </div>
             <div class="notes-col">
-              <div class="nt"><span class="nval">53%</span> 2 · Latency is eating signals</div>
-              <p class="np muted">More than half the signals were already stale at the ≤30 min budget. The v3 thesis explicitly tolerates this — but it is the largest measured leak today.</p>
+              <div class="nt"><span class="nval">18.7%</span> <span data-i18n="noteScreenT">2 · Screen veto split</span></div>
+              <p class="np muted" data-i18n="noteScreenP">Screen is a safety net on top of the smart-wallet signal, not the primary edge.</p>
               <div class="dbar">
-                <div class="dbrow"><span class="dbl">stale &gt;30m</span><span class="dbtr"><i style="width:100%"></i></span><span class="dbn">251</span></div>
-                <div class="dbrow"><span class="dbl">no buy match</span><span class="dbtr"><i style="width:33%"></i></span><span class="dbn">82</span></div>
-                <div class="dbrow"><span class="dbl">duplicate</span><span class="dbtr"><i style="width:18%"></i></span><span class="dbn">44</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rLowLiq">low liquidity</span><span class="dbtr"><i style="width:100%"></i></span><span class="dbn">7</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rFallKnife">falling knife</span><span class="dbtr"><i style="width:71%"></i></span><span class="dbn">5</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rHoneypot2">honeypot</span><span class="dbtr"><i style="width:43%"></i></span><span class="dbn">3</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rWashTrader2">wash_trader</span><span class="dbtr"><i style="width:43%"></i></span><span class="dbn">3</span></div>
               </div>
             </div>
             <div class="notes-col">
-              <div class="nt"><span class="nval">19%</span> 3 · The veto stays silent</div>
-              <p class="np muted">Screening is now a safety net, not the edge — consistent with the v2 thesis result. 78 of 96 clear the veto.</p>
+              <div class="nt"><span class="nval">66</span> <span data-i18n="noteExitT">3 · Exit reasons at Archive</span></div>
+              <p class="np muted" data-i18n="noteExitP">Net PnL is modeled after gas, fees and slippage before a trade is archived.</p>
               <div class="dbar">
-                <div class="dbrow"><span class="dbl">wash_trader</span><span class="dbtr"><i style="width:100%"></i></span><span class="dbn">6</span></div>
-                <div class="dbrow"><span class="dbl">trade_count low</span><span class="dbtr"><i style="width:83%"></i></span><span class="dbn">5</span></div>
-                <div class="dbrow"><span class="dbl">liquidity gate</span><span class="dbtr"><i style="width:67%"></i></span><span class="dbn">4</span></div>
-                <div class="dbrow"><span class="dbl">honeypot</span><span class="dbtr"><i style="width:33%"></i></span><span class="dbn">2</span></div>
-                <div class="dbrow"><span class="dbl">rug_score</span><span class="dbtr"><i style="width:17%"></i></span><span class="dbn">1</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rTarget">target hit</span><span class="dbtr"><i style="width:100%"></i></span><span class="dbn">28</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rDipGuard">dip guard</span><span class="dbtr"><i style="width:64%"></i></span><span class="dbn">18</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rManual">manual close</span><span class="dbtr"><i style="width:36%"></i></span><span class="dbn">10</span></div>
+                <div class="dbrow"><span class="dbl" data-i18n="rStale2">stale · timed archive</span><span class="dbtr"><i style="width:36%"></i></span><span class="dbn">10</span></div>
               </div>
             </div>
           </div>
           <div class="empty" style="margin-top:14px;">
             <div>
-              <div class="e-why" data-i18n="whyFunnel">Why stages 05–07 are empty: <b>Phase 5 is locked.</b></div>
-              <div class="e-when" data-i18n="whenFunnel">When it fills: the moment the v3 go/no-go gate passes and Phase 5 unlocks.</div>
-              <div class="e-gates" data-i18n="gatesFunnel">Gates it: GO/NO-GO ≥ +EV → H-0003 → theia-paper cron.</div>
+              <div class="e-why" data-i18n="whyFunnel">Live source: <b>/api/pipeline</b> — funnel counts, latency by action, veto split, activity24h and avg hold.</div>
+              <div class="e-when" data-i18n="whenFunnel">Tables: wallet_profiles · wallet_signals · screens · paper_trades · archives · price_snapshots.</div>
+              <div class="e-gates" data-i18n="gatesFunnel">Counts on this view are placeholders until the API is wired — see the data-bind hooks in the markup.</div>
             </div>
           </div>
         </div>
@@ -1618,8 +1904,9 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
   <section id="view-v2" class="view" data-od-id="v2-smart-wallets">
     <div class="toolbar" style="margin-bottom:14px;">
       <div class="tabs" role="tablist" id="walletTabs">
-        <button class="active" data-sub="roster">Roster</button>
-        <button data-sub="detail">Wallet detail</button>
+        <button class="active" data-sub="roster" data-i18n="tabRoster">Roster</button>
+        <button data-sub="detail" data-i18n="tabWalletDetail">Wallet detail</button>
+        <button data-sub="scan" data-i18n="tabScanHistory">Scan History</button>
       </div>
       <span class="grow" style="flex:1"></span>
       <input class="input" id="walletSearch" type="search" placeholder="Filter alias or address…" style="width:240px;padding:7px 12px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--fg);">
@@ -1638,17 +1925,16 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
           <table class="dtable" id="walletTable">
             <thead>
               <tr>
-                <th style="width:40px;" data-i18n="thWatch">Watch</th>
-                <th data-i18n="thWallet">Wallet</th>
-                <th data-i18n="thState">State</th>
-                <th data-i18n="thTags">GMGN tags</th>
-                <th class="num"><span data-i18n="thPnl">Account PnL</span> <span class="dc dc-prov">◆</span></th>
-                <th class="num"><span data-i18n="thFifo">FIFO PnL</span> <span class="dc dc-calc">=</span></th>
-                <th class="num" data-i18n="thTrades">Trades / 30d</th>
-                <th class="num"><span data-i18n="thWin">Win rate</span> <span class="dc dc-calc">=</span></th>
-                <th class="num" data-i18n="thScore">smart_score</th>
-                <th data-i18n="thLast">Last active</th>
-                <th></th>
+                <th class="th-info th-tip-left" style="width:40px;" tabindex="0"><span data-i18n="thWatch">Watch</span><span class="th-tip" data-i18n="ttWatch">Toggle to add or remove this wallet from the live follow set.</span></th>
+                <th class="th-info th-tip-left" tabindex="0"><span data-i18n="thWallet">Wallet</span><span class="th-tip" data-i18n="ttWallet">Short address and alias. Click the row to open full wallet detail.</span></th>
+                <th class="th-info" tabindex="0"><span data-i18n="thState">State</span><span class="th-tip" data-i18n="ttState">candidate → filtered → watched, or discarded when tagged wash_trader / bot.</span></th>
+                <th class="th-info" tabindex="0"><span data-i18n="thTags">GMGN tags</span><span class="th-tip" data-i18n="ttTags">Tags scraped from GMGN. Struck through when the wallet is discarded.</span></th>
+                <th class="num th-info" tabindex="0"><span data-i18n="thPnl">Account PnL</span><span class="th-tip" data-i18n="ttPnl">GMGN-reported realized PnL. Provider-sourced, scraped — not reconstructable by us.</span></th>
+                <th class="num th-info" tabindex="0"><span data-i18n="thFifo">FIFO PnL</span><span class="th-tip" data-i18n="ttFifo">Our own FIFO reconstruction from on-chain fills. Deterministic, reproducible to the SOL.</span></th>
+                <th class="num th-info" tabindex="0"><span data-i18n="thTrades">Trades / 30d</span><span class="th-tip" data-i18n="ttTrades">Number of executed trades on this wallet in the last 30 days.</span></th>
+                <th class="num th-info" tabindex="0"><span data-i18n="thWin">Win rate</span><span class="th-tip" data-i18n="ttWin">Share of trades closed profitable, recomputed from the PnL distribution buckets — not GMGN's own number.</span></th>
+                <th class="num th-info" tabindex="0"><span data-i18n="thScore">smart_score</span><span class="th-tip" data-i18n="ttScore">Composite ranking score used to prioritize the watch queue.</span></th>
+                <th class="num th-info" tabindex="0"><span data-i18n="thLast">Last active</span><span class="th-tip" data-i18n="ttLast">Time since this wallet's most recent on-chain trade.</span></th>
               </tr>
             </thead>
             <tbody id="walletRows"><!-- rows injected --></tbody>
@@ -1766,6 +2052,153 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
           </div>
         </div>
       </div>
+    </div>
+    <!-- SCAN HISTORY -->
+    <div id="sub-scan" class="sub" style="display:none;">
+
+      <!-- 0/1. HEADER + SUMMARY -->
+      <div class="col-12 panel" data-od-id="scan-header">
+        <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+          <h3 data-i18n="hScanTitle">Wallet Discovery — Scan History</h3>
+          <span class="pill sample" data-i18n="scanSamplePill">sample data</span>
+          <span class="pill accent" data-i18n="posPaperOnly">paper only</span>
+          <span class="grow"></span>
+          <span class="hint" data-i18n="hScanSubtitle">hourly scan · smart-money leaderboard</span>
+          <div class="scope-toggle" id="scanRangeToggle" role="tablist" aria-label="Scan history time range">
+            <button type="button" class="scope-opt" data-range="24h" role="tab" aria-selected="false" data-i18n="scanRange24h">24h</button>
+            <button type="button" class="scope-opt active" data-range="7d" role="tab" aria-selected="true" data-i18n="scanRange7d">7d</button>
+            <button type="button" class="scope-opt" data-range="30d" role="tab" aria-selected="false" data-i18n="scanRange30d">30d</button>
+            <button type="button" class="scope-opt" data-range="all" role="tab" aria-selected="false" data-i18n="scanRangeAll">all</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="pos-stat-grid" id="scanStatGrid">
+            <div class="pos-stat"><div class="pos-stat-label" data-i18n="scanStatScansL">Scans in range</div><div class="pos-stat-value num" id="scanStatScans">—</div><div class="pos-stat-note" id="scanStatScansNote"></div></div>
+            <div class="pos-stat"><div class="pos-stat-label" data-i18n="scanStatWalletsL">Unique wallets seen</div><div class="pos-stat-value num" id="scanStatWallets">—</div><div class="pos-stat-note" id="scanStatWalletsNote"></div></div>
+            <div class="pos-stat"><div class="pos-stat-label" data-i18n="scanStatLatestL">Latest run · scanned / passed</div><div class="pos-stat-value num" id="scanStatLatest">—</div><div class="pos-stat-note" id="scanStatLatestNote"></div></div>
+            <div class="pos-stat"><div class="pos-stat-label" data-i18n="scanStatTrackedL">Tracked now</div><div class="pos-stat-value num" id="scanStatTracked">—</div><div class="pos-stat-note" id="scanStatTrackedNote"></div></div>
+            <div class="pos-stat"><div class="pos-stat-label" data-i18n="scanStatFlaggedL">Flagged wash / bot</div><div class="pos-stat-value num" id="scanStatFlagged">—</div><div class="pos-stat-note" id="scanStatFlaggedNote"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. RUN-OVER-TIME CHART -->
+      <div class="col-12 panel" data-od-id="scan-run-chart" style="margin-top:16px;">
+        <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+          <h3 data-i18n="hScanRunChart">Scan runs over time</h3>
+          <span class="grow"></span>
+          <span class="hint" data-i18n="scanRunChartHint">scanned vs. passed, per hourly run · dashed = missing run</span>
+        </div>
+        <div class="panel-body">
+          <div class="scan-chart-legend" id="scanChartLegend"></div>
+          <div class="scan-chart-wrap"><svg id="scanRunChart" viewBox="0 0 960 220" preserveAspectRatio="none" role="img" aria-label="Scanned vs passed wallets per hourly run"></svg><div class="scan-tooltip" id="scanChartTip" hidden></div></div>
+        </div>
+      </div>
+
+      <!-- 3. FUNNEL + REJECT REASONS -->
+      <div class="grid-panels" style="margin-top:16px;">
+        <div class="col-8 panel" data-od-id="scan-funnel">
+          <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+            <h3 data-i18n="hScanFunnel">Gate funnel</h3>
+            <span class="grow"></span>
+            <span class="hint" data-i18n="scanFunnelHint">sequential gate, one wallet-run per stage it clears</span>
+          </div>
+          <div class="panel-body">
+            <div class="pipe-canvas" style="padding:20px 16px;">
+              <div class="pipe-flow" id="scanFunnelFlow" style="max-width:none;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-4 panel" data-od-id="scan-reject-reasons">
+          <div class="panel-head">
+            <h3 data-i18n="hScanRejects">Reject reasons</h3>
+          </div>
+          <div class="panel-body">
+            <div class="dbar" id="scanRejectBars" style="margin-top:0;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. WALLET SCAN LEDGER -->
+      <div class="col-12 panel" data-od-id="scan-ledger" style="margin-top:16px;">
+        <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+          <h3 data-i18n="hScanLedger">Wallet scan ledger</h3>
+          <span class="hint" data-i18n="scanLedgerHint">one row per wallet per scan · click a row for detail</span>
+          <span class="grow"></span>
+          <input class="input" id="scanSearch" type="search" placeholder="Filter alias or address…" style="width:200px;padding:7px 12px;font-size:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--fg);">
+          <div class="pos-filter" id="scanGateFilter" role="group" aria-label="Filter by gate result">
+            <button type="button" class="pos-filter-opt active" data-gate="all" aria-pressed="true" data-i18n="scanFilterAll">All</button>
+            <button type="button" class="pos-filter-opt" data-gate="pass" aria-pressed="false" data-i18n="scanFilterPass">Pass</button>
+            <button type="button" class="pos-filter-opt" data-gate="fail" aria-pressed="false" data-i18n="scanFilterFail">Fail</button>
+          </div>
+        </div>
+        <div class="table-wrap" style="max-height:520px;">
+          <table class="dtable" id="scanTable">
+            <thead>
+              <tr>
+                <th class="pos-token-th th-tip-left" data-sort="wallet"><span data-i18n="thWallet">Wallet</span></th>
+                <th class="num" data-sort="scanTs"><span data-i18n="thScanTs">Scan time</span></th>
+                <th class="num" data-sort="win7"><span data-i18n="thWin7">Win 7d</span></th>
+                <th class="num" data-sort="win30"><span data-i18n="thWin30">Win 30d</span></th>
+                <th class="num" data-sort="trades"><span data-i18n="thTradesBS">Trades (B/S)</span></th>
+                <th class="num" data-sort="holding"><span data-i18n="thHolding">Holding h</span></th>
+                <th class="num" data-sort="vol7"><span data-i18n="thVol7">Volume 7d</span></th>
+                <th class="num" data-sort="pnl7"><span data-i18n="thPnl7">Realized PnL 7d</span></th>
+                <th data-i18n="thTags">GMGN tags</th>
+                <th class="th-info" tabindex="0"><span data-i18n="thGate">Gate</span><span class="th-tip" data-i18n="ttGate">Whether this wallet-run cleared every gate stage.</span></th>
+                <th data-i18n="thRejectReason">Reject reason</th>
+              </tr>
+            </thead>
+            <tbody id="scanTableBody"></tbody>
+          </table>
+        </div>
+        <div class="panel-body" style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <span class="src dc dc-calc" data-i18n="scanLedgerSrc">= sample generator · not a live source</span>
+          <div class="pager" id="scanPager">
+            <button type="button" class="btn-icon" id="scanPagerPrev" aria-label="Previous page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <span class="pager-label" id="scanPagerLabel">1 / 1</span>
+            <button type="button" class="btn-icon" id="scanPagerNext" aria-label="Next page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. THRESHOLD SENSITIVITY -->
+      <div class="grid-panels" style="margin-top:16px;">
+        <div class="col-5 panel" data-od-id="scan-sensitivity">
+          <div class="panel-head">
+            <h3 data-i18n="hScanSens">Threshold sensitivity</h3>
+            <span class="grow"></span>
+            <span class="pill sample" data-i18n="scanSensPill">sensitivity · sample data</span>
+          </div>
+          <div class="panel-body">
+            <p class="small muted" style="margin-bottom:10px;" data-i18n="scanSensDesc">Read-only: how many sample wallet-runs in range would pass if the 7d win-rate gate moved.</p>
+            <div class="pos-filter" id="scanSensToggle" role="group" aria-label="Win-rate threshold to test"></div>
+            <div class="scan-sens-result" id="scanSensResult"></div>
+          </div>
+        </div>
+        <div class="col-7 panel" data-od-id="scan-histograms">
+          <div class="panel-head"><h3 data-i18n="hScanHist">Distribution across the range</h3></div>
+          <div class="panel-body">
+            <div class="scan-hist-grid" id="scanHistGrid"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- WALLET SCAN DETAIL DRAWER -->
+    <div class="scan-drawer-scrim" id="scanDrawerScrim" hidden></div>
+    <div class="scan-drawer" id="scanDrawer" role="dialog" aria-modal="true" aria-labelledby="scanDrawerTitle" hidden>
+      <div class="scan-drawer-head">
+        <div>
+          <div class="scan-drawer-title" id="scanDrawerTitle">—</div>
+          <span class="addr mono small muted" id="scanDrawerAddr">—</span>
+        </div>
+        <span class="grow"></span>
+        <span class="pill sample" data-i18n="scanSamplePill">sample data</span>
+        <button type="button" class="btn-icon" id="scanDrawerClose" aria-label="Close detail drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div class="scan-drawer-body" id="scanDrawerBody"></div>
     </div>
   </section>
 
@@ -2159,79 +2592,155 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
   </section>
 
   <!-- ═══════════════════════════════════════════════════════════
-       Paper Positions & Ledger (Phase 5 — locked today)
+       Paper Positions & Entry Journal (view-v5)
        ═══════════════════════════════════════════════════════════ -->
   <section id="view-v5" class="view" data-od-id="v5-paper-ledger">
 
-    <div class="lock-banner" data-od-id="v5-lock-banner">
-      <div class="lock-ico">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+    <!-- HEADER + SUMMARY -->
+    <div class="col-12 panel" data-od-id="pos-header">
+      <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+        <h3 data-i18n="hPosTitle">Paper Positions &amp; Entry Journal</h3>
+        <span class="pill accent" data-i18n="posPaperOnly">paper only</span>
+        <span class="grow"></span>
+        <span class="hint" id="posFreshness" data-i18n="posFreshDefault">No paper fills recorded yet · —</span>
+        <div class="scope-toggle" id="posScopeToggle" role="tablist" aria-label="Positions scope">
+          <button type="button" class="scope-opt" data-scope="open" role="tab" aria-selected="false" data-i18n="posScopeOpen">Open</button>
+          <button type="button" class="scope-opt active" data-scope="all" role="tab" aria-selected="true" data-i18n="posScopeAll">All</button>
+          <button type="button" class="scope-opt" data-scope="h24" role="tab" aria-selected="false" data-i18n="posScope24h">Last 24h</button>
+        </div>
       </div>
-      <div>
-        <div class="lt" data-i18n="lockTitle">Phase 5 locked — paper trading is not enabled</div>
-        <div class="lc" data-i18n="lockDesc">This is "not yet", not "broken". Paper only: every fill is simulated off live reserves, gas and fees — there are no signing keys anywhere on this box. Unlock criterion: the v3 GO/NO-GO gate passes (expectancy &gt; 0 AND profit_factor &gt; 1 on the walk-forward) → theia-paper cron switches on → fills begin simulating.</div>
+      <div class="panel-body">
+        <div class="pos-stat-grid" id="posStatGrid">
+          <div class="pos-stat" data-od-id="pos-stat-open">
+            <div class="pos-stat-label" data-i18n="posStatOpenL">Open positions</div>
+            <div class="pos-stat-value num" id="statOpen">0</div>
+            <div class="pos-stat-note" id="statOpenNote" data-i18n="posNoFillsShort">No paper fills recorded yet.</div>
+          </div>
+          <div class="pos-stat" data-od-id="pos-stat-entries">
+            <div class="pos-stat-label" data-i18n="posStatEntriesL">Entries today</div>
+            <div class="pos-stat-value num" id="statEntries">0</div>
+            <div class="pos-stat-note" id="statEntriesNote" data-i18n="posNoFillsShort">No paper fills recorded yet.</div>
+          </div>
+          <div class="pos-stat" data-od-id="pos-stat-parked">
+            <div class="pos-stat-label" data-i18n="posStatParkedL">Parked / blocked signals</div>
+            <div class="pos-stat-value num" id="statParked">0</div>
+            <div class="pos-stat-note" id="statParkedNote" data-i18n="posNoSignalsShort">No signals parked or blocked yet.</div>
+          </div>
+          <div class="pos-stat" data-od-id="pos-stat-pnl">
+            <div class="pos-stat-label" data-i18n="posStatPnlL">Realized net PnL</div>
+            <div class="pos-stat-value num" id="statPnl">—</div>
+            <div class="pos-stat-note" id="statPnlNote" data-i18n="posPnlUnavail">Not available — no closed trades yet.</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="locked-panel">
-      <div class="grid-panels">
-        <div class="col-8 panel locked-overlay" data-od-id="v5-open-positions">
-          <div class="panel-head">
-            <h3 data-i18n="hOpenPos">Open positions — paper_trades</h3>
-            <span class="grow"></span>
-            <span class="pill locked" data-i18n="stLocked">Phase 5</span>
-          </div>
-          <div class="table-wrap" style="max-height:420px;">
-            <table class="dtable">
-              <thead>
-                <tr><th data-i18n="thToken">Token</th><th class="num" data-i18n="thEntryTs">Entry ts</th><th class="num" data-i18n="thEntryPrice">Entry price</th><th class="num" data-i18n="thSize">Size SOL</th><th class="num" data-i18n="thStop">Stop</th><th class="num" data-i18n="thTp1">TP 1</th><th class="num" data-i18n="thTp2">TP 2</th><th class="num" data-i18n="thTp3">TP 3</th><th class="num" data-i18n="thDist">Dist to stop</th><th data-i18n="thState">State</th></tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:34px 10px;">
-                  <div style="font-family:var(--font-mono);font-size:11px;" data-i18n="posEmptyT">0 open positions</div>
-                  <div class="small" style="margin-top:6px;" data-i18n="posEmptyW">Why: Phase 5 locked · When: after the v3 gate passes · Gates: GO/NO-GO → theia-paper cron</div>
-                </td></tr>
-              </tbody>
-            </table>
-          </div>
+    <!-- ENTRY / POSITION TABLE -->
+    <div class="col-12 panel" data-od-id="pos-table" style="margin-top:16px;">
+      <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+        <h3 data-i18n="hPosTable">Entries — paper_trades</h3>
+        <span class="hint" data-i18n="posTableHint">signal → screen → entry → monitor → exit, one row per paper entry</span>
+        <span class="grow"></span>
+        <div class="pos-filter" id="posFilter" role="group" aria-label="Filter entries by state">
+          <button type="button" class="pos-filter-opt active" data-filter="all" aria-pressed="true" data-i18n="posFilterAll">All</button>
+          <button type="button" class="pos-filter-opt" data-filter="open" aria-pressed="false" data-i18n="posFilterOpen">Open</button>
+          <button type="button" class="pos-filter-opt" data-filter="parked" aria-pressed="false" data-i18n="posFilterParked">Parked</button>
+          <button type="button" class="pos-filter-opt" data-filter="blocked" aria-pressed="false" data-i18n="posFilterBlocked">Blocked</button>
+          <button type="button" class="pos-filter-opt" data-filter="closed" aria-pressed="false" data-i18n="posFilterClosed">Closed</button>
         </div>
-        <div class="col-4 panel locked-overlay" data-od-id="v5-fill-costs">
-          <div class="panel-head">
-            <h3 data-i18n="hCost">Cost is part of the result</h3>
-            <span class="grow"></span>
-            <span class="pill locked" data-i18n="stPhase5">Phase 5</span>
-          </div>
-          <div class="panel-body">
-            <p class="small muted" style="line-height:1.6;">Every simulated fill will carry a full snapshot — reserves, base_fee, priority_fee, gas_sol, slippage — so PnL is reconstructable to the SOL and gas + slippage are never a footnote.</p>
-            <div class="empty" style="margin-top:12px;display:block;">
-              <div class="e-why" data-i18n="whyFills"><b>No fills to show.</b></div>
-              <div class="e-when" data-i18n="whenFills">First fills appear the night Phase 5 unlocks.</div>
-              <div class="e-gates" data-i18n="gatesFills">Costs visualized here: gas_sol · priority_fee · slippage per exit_reason.</div>
-            </div>
-          </div>
+      </div>
+      <div class="table-wrap" style="max-height:520px;">
+        <table class="dtable" id="posTable">
+          <thead>
+            <tr>
+              <th class="pos-token-th th-info th-tip-left" tabindex="0"><span data-i18n="thToken">Token</span><span class="th-tip" data-i18n="ttPosToken">Symbol/name + mint address. Expand a row for the full entry rationale.</span></th>
+              <th class="num th-info" tabindex="0"><span data-i18n="thSignalTs">Signal ts</span><span class="th-tip" data-i18n="ttSignalTs">wallet_signals.ts — when the trigger wallet's buy was first detected.</span></th>
+              <th class="num" data-i18n="thEntryTs">Entry ts</th>
+              <th class="num th-info" tabindex="0"><span data-i18n="thLatency">Latency</span><span class="th-tip" data-i18n="ttLatency">Time between signal detection and the simulated fill.</span></th>
+              <th class="num" data-i18n="thEntryPrice">Entry price</th>
+              <th class="num th-info" tabindex="0"><span data-i18n="thEntryMcap">Entry mcap</span><span class="th-tip" data-i18n="ttEntryMcap">price_snapshots — market cap at the moment of simulated entry.</span></th>
+              <th class="num" data-i18n="thSize">Size SOL</th>
+              <th class="th-info" tabindex="0"><span data-i18n="thTriggerWallet">Trigger wallet</span><span class="th-tip" data-i18n="ttTriggerWallet">The watched wallet whose buy generated this entry.</span></th>
+              <th class="num th-info" tabindex="0"><span data-i18n="thWalletScore">Wallet score</span><span class="th-tip" data-i18n="ttWalletScore">wallet_profiles.smart_score at signal time.</span></th>
+              <th class="th-info" tabindex="0"><span data-i18n="thRule">Hypothesis / rule</span><span class="th-tip" data-i18n="ttRule">The named rule that qualified this signal for a simulated entry.</span></th>
+              <th class="th-info" tabindex="0"><span data-i18n="thScreen">Screen</span><span class="th-tip" data-i18n="ttScreenCol">screens.veto_reason — pass or veto from the safety screen.</span></th>
+              <th class="num" data-i18n="thStop">Stop</th>
+              <th class="num" data-i18n="thTp1">TP1</th>
+              <th class="num" data-i18n="thTp2">TP2</th>
+              <th class="num" data-i18n="thTp3">TP3</th>
+              <th class="num" data-i18n="thCurrentPrice">Current price</th>
+              <th class="num th-info" tabindex="0"><span data-i18n="thUnrealized">Unrealized PnL %</span><span class="th-tip" data-i18n="ttUnrealized">Open positions only — mark price vs. entry price, before exit costs.</span></th>
+              <th data-i18n="thState">State</th>
+            </tr>
+          </thead>
+          <tbody id="posTableBody"><!-- rows injected by renderPositions() --></tbody>
+        </table>
+      </div>
+      <div class="panel-body" style="padding:10px 16px;">
+        <div class="prov" style="margin-top:0;border-top:0;padding-top:0;flex-wrap:wrap;">
+          <span class="src dc dc-prov">◆ provider · price_snapshots, wallet_signals</span>
+          <span class="src dc dc-calc">= our compute · paper_trades, screens</span>
+          <span class="ts" id="posTableFreshness" data-i18n="posFreshDefault">No paper fills recorded yet · —</span>
         </div>
       </div>
     </div>
-    <div style="margin-top:16px;">
-      <div class="panel locked-overlay" data-od-id="v5-archives">
-        <div class="panel-head">
-          <h3 data-i18n="hArch">Archives — append-only ledger</h3>
-          <span class="grow"></span>
-          <span class="pill locked" data-i18n="stPhase5">Phase 5</span>
-        </div>
-        <div class="table-wrap" style="max-height:300px;">
-          <table class="dtable">
-            <thead><tr><th class="num" data-i18n="thHold">hold_secs</th><th class="num" data-i18n="thRealized">realized_pnl_sol</th><th class="num" data-i18n="thRoi">roi</th><th data-i18n="thExit">exit_reason</th><th class="num" data-i18n="thTs">ts</th></tr></thead>
-            <tbody>
-              <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:26px 10px;">
-                <div style="font-family:var(--font-mono);font-size:11px;" data-i18n="archEmptyT">0 archived trades</div>
-                <div class="small" style="margin-top:6px;" data-i18n="archEmptyW">exit_reason breakdown (stop / tp / trail / time_stop) lands here first.</div>
-              </td></tr>
-            </tbody>
-          </table>
+
+    <!-- OPEN POSITION CARDS -->
+    <div class="col-12 panel" data-od-id="pos-open-cards" style="margin-top:16px;">
+      <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+        <h3 data-i18n="hOpenCards">Open positions — monitor view</h3>
+        <span class="grow"></span>
+        <span class="hint" id="posOpenCardsHint" data-i18n="posOpenCardsHint">guard status, not a countdown</span>
+      </div>
+      <div class="panel-body">
+        <div class="pos-card-grid" id="posCardGrid"><!-- cards injected by renderOpenCards() --></div>
+      </div>
+    </div>
+
+    <!-- CLOSED / ARCHIVED TRADES -->
+    <div class="col-12 panel" data-od-id="pos-archives" style="margin-top:16px;">
+      <div class="panel-head" style="flex-wrap:wrap;gap:10px;">
+        <h3 data-i18n="hArch">Archives — append-only ledger</h3>
+        <span class="grow"></span>
+        <span class="hint" data-i18n="posArchHint">closed trades only · net of gas + fees + slippage</span>
+      </div>
+      <div class="table-wrap" style="max-height:360px;">
+        <table class="dtable" id="archTable">
+          <thead>
+            <tr>
+              <th class="pos-token-th th-info th-tip-left" tabindex="0"><span data-i18n="thToken">Token</span><span class="th-tip" data-i18n="ttArchToken">Symbol/name + mint address of the closed trade.</span></th>
+              <th class="num" data-i18n="thEntryTs">Entry ts</th>
+              <th class="num" data-i18n="thExitTs">Exit ts</th>
+              <th class="num" data-i18n="thHold">Hold</th>
+              <th class="num" data-i18n="thPriceRange">Entry → exit price</th>
+              <th class="num" data-i18n="thMcapRange">Entry → exit mcap</th>
+              <th class="num" data-i18n="thGross">Gross PnL</th>
+              <th class="num th-info" tabindex="0"><span data-i18n="thGas">Gas / fee</span><span class="th-tip" data-i18n="ttGas">Modeled base_fee + priority_fee for the simulated fill and exit.</span></th>
+              <th class="num" data-i18n="thSlippage">Slippage</th>
+              <th class="num th-info" tabindex="0"><span data-i18n="thRealized">Net PnL</span><span class="th-tip" data-i18n="ttRealized">archives.realized_pnl_sol — gross PnL net of gas, fee and slippage.</span></th>
+              <th class="num" data-i18n="thRoi">ROI</th>
+              <th data-i18n="thExit">Exit reason</th>
+              <th class="th-info" tabindex="0"><span data-i18n="thRule">Rule</span><span class="th-tip" data-i18n="ttRuleArch">The hypothesis/rule this entry traced back to.</span></th>
+              <th data-i18n="thTriggerWallet">Trigger wallet</th>
+            </tr>
+          </thead>
+          <tbody id="archTableBody"><!-- rows injected by renderArchives() --></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DATA CONTRACT / PLACEHOLDER HOOKS -->
+    <div class="col-12 panel" data-od-id="pos-data-contract" style="margin-top:16px;">
+      <div class="panel-head"><h3 data-i18n="hPosContract">Where this data comes from</h3></div>
+      <div class="panel-body">
+        <div class="empty" style="display:block;">
+          <div class="e-why" data-i18n="posContractWhy">No endpoint wired yet. This view renders a documented PositionsPayload shape (fetchedAt, positions[], archives[], summary) and shows an honest empty state until it exists — nothing here is fabricated.</div>
+          <div class="e-when" data-i18n="posContractWhen">Source tables: paper_trades · archives · wallet_signals · screens · price_snapshots · wallet_profiles.</div>
+          <div class="e-gates" data-i18n="posContractGates">TODO: wire fetch('/api/positions') and swap POSITIONS_DATA for the response, keeping the same field names.</div>
         </div>
       </div>
     </div>
+
   </section>
 
   <!-- ═══════════════════════════════════════════════════════════
@@ -2770,15 +3279,81 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       foot3: 'hermes orchestrator · vps-01 · uptime 34d 12h',
       hExitc: 'Phase 1 exit criteria — knowledge-first', hVitals: 'Agent vitals',
       hDigest: 'Last 24h digest — what the agent did overnight',
-      hFunnel: 'Daily funnel — the collapse must be visible',
+      hintPipeLive: 'live · pulses every ~6s',
+      scopeAll: 'All-time', scope24h: 'Last 24h',
+      rowDetect: 'Signal detection', rowExec: 'Trade lifecycle',
+      edgeWatchlist: 'watchlist', edgeLive: 'live', edgeHold: '≤ hold',
+      provApi: '/api/pipeline · funnel, latency by action, veto split, activity24h, avg hold',
+      stHarvestLbl: 'GMGN harvest', stHarvestMeta: 'wallet_profiles',
+      tipHarvestT: 'wallet_profiles', tipHarvestD: 'GMGN scraper · raw wallet harvest',
+      stQualifyLbl: 'Qualify', stQualifyMeta: 'tags · dup gate',
+      tipQualifyT: 'wallet_profiles.qualified', tipQualifyD: 'tag rules + dedup by address',
+      stWalletsLbl: 'Smart wallets', stWalletsMeta: 'active count',
+      tipWalletsT: 'wallet_profiles.status', tipWalletsD: 'active smart-wallet watchlist size',
+      stBuyLbl: 'Buy signal', stBuyMeta: 'wallet buys detected',
+      tipBuyT: 'wallet_signals', tipBuyD: 'on-chain buys matched to watchlist',
+      stScreenLbl: 'Screen', stScreenMeta: 'veto / pass',
+      tipScreenT: 'screens.veto_reason', tipScreenD: 'safety veto · pass / deny split',
+      stEntryLbl: 'Paper entry', stEntryMeta: 'paper_trades',
+      tipEntryT: 'paper_trades', tipEntryD: 'status = open · position at entry price',
+      stMonitorLbl: 'Monitor', stMonitorMeta: 'open positions',
+      tipMonitorT: 'price_snapshots', tipMonitorD: 'mark price · guard status, not a countdown',
+      stExitLbl: 'Exit / Archive', stExitMeta: 'archives',
+      tipExitT: 'archives', tipExitD: 'net PnL after modeled gas + fees + slippage',
+      cHarvested: 'harvested', cQualified: 'qualified', cSignals: 'buy signals', cScreened: 'screened in',
+      stScreenRate: 'screen pass rate',
+      noteQualifyT: '1 · Qualify is the biggest wall',
+      noteQualifyP: 'Most harvested wallets fail the tag rules or dedupe against an address already on the watchlist.',
+      rDupAddr: 'duplicate address', rNoTag: 'no qualifying tag',
+      noteScreenT: '2 · Screen veto split',
+      noteScreenP: 'Screen is a safety net on top of the smart-wallet signal, not the primary edge.',
+      rLowLiq: 'low liquidity', rFallKnife: 'falling knife', rHoneypot2: 'honeypot', rWashTrader2: 'wash_trader',
+      noteExitT: '3 · Exit reasons at Archive',
+      noteExitP: 'Net PnL is modeled after gas, fees and slippage before a trade is archived.',
+      rTarget: 'target hit', rDipGuard: 'dip guard', rManual: 'manual close', rStale2: 'stale · timed archive',
+      hFunnel: 'Pipeline flow — the collapse must be visible',
       hVolDies: 'Where the volume dies', hLegacy: 'Legacy discovery path — secondary',
       hWallets: "Wallets we're successfully tracking", hThree: 'Three states, three looks',
+      tabRoster: 'Roster', tabWalletDetail: 'Wallet detail', tabScanHistory: 'Scan History',
+      hScanTitle: 'Wallet Discovery — Scan History', scanSamplePill: 'sample data',
+      hScanSubtitle: 'hourly scan · smart-money leaderboard',
+      scanRange24h: '24h', scanRange7d: '7d', scanRange30d: '30d', scanRangeAll: 'all',
+      scanStatScansL: 'Scans in range', scanStatWalletsL: 'Unique wallets seen',
+      scanStatLatestL: 'Latest run · scanned / passed', scanStatTrackedL: 'Tracked now',
+      scanStatFlaggedL: 'Flagged wash / bot',
+      hScanRunChart: 'Scan runs over time', scanRunChartHint: 'scanned vs. passed, per hourly run · dashed = missing run',
+      hScanFunnel: 'Gate funnel', scanFunnelHint: 'sequential gate, one wallet-run per stage it clears',
+      hScanRejects: 'Reject reasons',
+      hScanLedger: 'Wallet scan ledger', scanLedgerHint: 'one row per wallet per scan · click a row for detail',
+      scanFilterAll: 'All', scanFilterPass: 'Pass', scanFilterFail: 'Fail',
+      thScanTs: 'Scan time', thWin7: 'Win 7d', thWin30: 'Win 30d', thTradesBS: 'Trades (B/S)',
+      thHolding: 'Holding h', thVol7: 'Volume 7d', thPnl7: 'Realized PnL 7d',
+      thGate: 'Gate', ttGate: 'Whether this wallet-run cleared every gate stage.', thRejectReason: 'Reject reason',
+      scanLedgerSrc: '= sample generator · not a live source',
+      hScanSens: 'Threshold sensitivity', scanSensPill: 'sensitivity · sample data',
+      scanSensDesc: 'Read-only: how many sample wallet-runs in range would pass if the 7d win-rate gate moved.',
+      hScanHist: 'Distribution across the range',
+      scanJustNow: 'just now', scanAgo: 'ago',
+      scanReasonWashBot: 'flagged wash_trader / bot', scanReasonWin7: 'win rate 7d too low',
+      scanReasonWin30: 'win rate 30d too low', scanReasonTrades: 'too few trades', scanReasonHolding: 'holding too long',
+      scanNoRuns: 'no scans in this range',
+      scanStageScanned: 'Scanned', scanStageTag: 'Tag-clean', scanStageWin7: 'Win 7d ≥ 0.60',
+      scanStageWin30: 'Win 30d ≥ 0.50', scanStageTrades: 'Trades ≥ 150', scanStageHolding: 'Holding < 48h', scanStagePassed: 'Passed',
+      scanLegendScanned: 'scanned', scanLegendPassed: 'passed', scanFail: 'fail', scanNoRunTip: 'no scan this hour',
+      scanLedgerEmptyT: 'No scans match this view', scanLedgerEmptyW: 'Try widening the time range or clearing filters.',
+      scanSensLabel: 'win rate 7d ≥', scanSensCurrent: 'current', scanSensWouldPass: 'would pass',
+      scanHistWin: 'Win rate 7d', scanHistTrades: 'Trades', scanHistHolding: 'Holding (h)',
+      scanDrawerSeries: 'Metrics across scans', scanDrawerDelta: 'Latest vs. first seen',
+      scanDrawerGateHist: 'Gate history', scanDrawerNote: 'All values on this drawer are sample data for design purposes.',
+      hPnlDist: 'PnL distribution — 5x buckets, sample shape',
       hTrust: 'Two classes of trust', hQueue: 'Watch queue',
       hVeto: 'Safety veto — a gate, not the edge',
       hFinding: "Research finding — the score doesn't separate",
       hTokens: 'Screened tokens — today', hWalk: 'Walk-forward — H-0003',
       hWindow: 'Window detail', hHyp: 'Hypotheses', hGrave: 'Hypothesis graveyard',
-      hOpenPos: 'Open positions — paper_trades', hCost: 'Cost is part of the result',
+      hPosTitle: 'Paper Positions & Entry Journal', posPaperOnly: 'paper only',
+      hPosTable: 'Entries — paper_trades', hOpenCards: 'Open positions — monitor view',
+      hPosContract: 'Where this data comes from',
       hArch: 'Archives — append-only ledger', hCov: 'Coverage across modules',
       hSeed: '10 seed questions — Phase 1 exit criteria',
       hGraph: 'Knowledge graph — notes and how they link',
@@ -2802,12 +3377,14 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       htPnlDenom: 'account-level realized PnL is the denominator · win rate recomputed from distribution buckets',
       htProv: 'GMGN data is provider-sourced ◆ · our FIFO is compute =',
       lnLocked: '◌ Phase 5 locked', dropEmpty: 'empty until exits exist',
-      whyFunnel: 'Why stages 05–07 are empty: <b>Phase 5 is locked.</b>',
-      whenFunnel: 'When it fills: the moment the v3 go/no-go gate passes and Phase 5 unlocks.',
-      gatesFunnel: 'Gates it: GO/NO-GO ≥ +EV → H-0003 → theia-paper cron.',
-      whyFills: 'No fills to show.',
-      whenFills: 'First fills appear the night Phase 5 unlocks.',
-      gatesFills: 'Costs visualized here: gas_sol · priority_fee · slippage per exit_reason.',
+      whyFunnel: 'Live source: <b>/api/pipeline</b> — funnel counts, latency by action, veto split, activity24h and avg hold.',
+      whenFunnel: 'Tables: wallet_profiles · wallet_signals · screens · paper_trades · archives · price_snapshots.',
+      gatesFunnel: 'Counts on this view are placeholders until the API is wired — see the data-bind hooks in the markup.',
+      posFreshDefault: 'No paper fills recorded yet · —',
+      posScopeOpen: 'Open', posScopeAll: 'All', posScope24h: 'Last 24h',
+      posTableHint: 'signal → screen → entry → monitor → exit, one row per paper entry',
+      posArchHint: 'closed trades only · net of gas + fees + slippage',
+      posOpenCardsHint: 'guard status, not a countdown',
       mExp: 'Expectancy · out-of-sample', mPf: 'Profit Factor · out-of-sample',
       tk0: 'target 0', tk1: 'target 1', tkReached: 'reached',
       expStatus: '0 trades · no OOS sample yet', pfStatus: '0 trades · no OOS sample yet',
@@ -2825,12 +3402,44 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       vtSubTools: '1 unverified · dexdata', vtSubLlm: '$0.11 / hr avg · 412k tokens in',
       prEyebrow: 'Phase rail', prTitle: 'Roadmap gating — crons switch on one at a time',
       prChip: 'Current · Phase 1', prLocked: '7 phases · 5 locked',
-      lockTitle: 'Phase 5 locked — paper trading is not enabled',
-      lockDesc: 'This is "not yet", not "broken". Paper only: every fill is simulated off live reserves, gas and fees — there are no signing keys anywhere on this box. Unlock criterion: the v3 GO/NO-GO gate passes (expectancy &gt; 0 AND profit_factor &gt; 1 on the walk-forward) → theia-paper cron switches on → fills begin simulating.',
-      posEmptyT: '0 open positions',
-      posEmptyW: 'Why: Phase 5 locked · When: after the v3 gate passes · Gates: GO/NO-GO → theia-paper cron',
-      archEmptyT: '0 archived trades',
-      archEmptyW: 'exit_reason breakdown (stop / tp / trail / time_stop) lands here first.',
+      posStatOpenL: 'Open positions', posStatEntriesL: 'Entries today',
+      posStatParkedL: 'Parked / blocked signals', posStatPnlL: 'Realized net PnL',
+      posNoFillsShort: 'No paper fills recorded yet.', posNoSignalsShort: 'No signals parked or blocked yet.',
+      posPnlUnavail: 'Not available — no closed trades yet.',
+      posFilterAll: 'All', posFilterOpen: 'Open', posFilterParked: 'Parked',
+      posFilterBlocked: 'Blocked', posFilterClosed: 'Closed',
+      ttPosToken: 'Symbol/name + mint address. Expand a row for the full entry rationale.',
+      ttArchToken: 'Symbol/name + mint address of the closed trade.',
+      thSignalTs: 'Signal ts', ttSignalTs: "wallet_signals.ts — when the trigger wallet's buy was first detected.",
+      thLatency: 'Latency', ttLatency: 'Time between signal detection and the simulated fill.',
+      thEntryMcap: 'Entry mcap', ttEntryMcap: 'price_snapshots — market cap at the moment of simulated entry.',
+      thTriggerWallet: 'Trigger wallet', ttTriggerWallet: 'The watched wallet whose buy generated this entry.',
+      thWalletScore: 'Wallet score', ttWalletScore: 'wallet_profiles.smart_score at signal time.',
+      thRule: 'Hypothesis / rule', ttRule: 'The named rule that qualified this signal for a simulated entry.',
+      ttRuleArch: 'The hypothesis/rule this entry traced back to.',
+      ttScreenCol: 'screens.veto_reason — pass or veto from the safety screen.',
+      thCurrentPrice: 'Current price', thUnrealized: 'Unrealized PnL %',
+      ttUnrealized: 'Open positions only — mark price vs. entry price, before exit costs.',
+      thExitTs: 'Exit ts', thPriceRange: 'Entry → exit price', thMcapRange: 'Entry → exit mcap',
+      thGross: 'Gross PnL', thGas: 'Gas / fee', ttGas: 'Modeled base_fee + priority_fee for the simulated fill and exit.',
+      thSlippage: 'Slippage', ttRealized: 'archives.realized_pnl_sol — gross PnL net of gas, fee and slippage.',
+      posContractWhy: 'No endpoint wired yet. This view renders a documented PositionsPayload shape (fetchedAt, positions[], archives[], summary) and shows an honest empty state until it exists — nothing here is fabricated.',
+      posContractWhen: 'Source tables: paper_trades · archives · wallet_signals · screens · price_snapshots · wallet_profiles.',
+      posContractGates: "TODO: wire fetch('/api/positions') and swap POSITIONS_DATA for the response, keeping the same field names.",
+      posEmptyDefaultT: 'No paper fills recorded yet',
+      posEmptyDefaultW: "Phase 5 hasn't produced a simulated entry yet — this ledger is ready to populate the moment paper_trades has rows.",
+      posEmptyOpenT: '0 open positions',
+      posEmptyOpenW: 'No open paper positions right now — check the All or Last 24h scope for parked, blocked or closed activity.',
+      posEmpty24hT: 'No entries in the last 24h',
+      posEmpty24hW: 'No signal produced a paper entry in the last 24 hours.',
+      posEmptyFilterT: 'No entries match this filter',
+      posEmptyFilterW: 'Try a different state, or switch back to All.',
+      posCardEmptyT: '0 open positions',
+      posCardEmptyW: "No fills exist yet — this is not a data-availability issue, Phase 5 simply hasn't produced one.",
+      posArchEmptyT: '0 archived trades',
+      posArchEmptyW: 'exit_reason breakdown (stop / tp / trail / time_stop) lands here once a paper trade closes.',
+      posRationaleUnavail: 'Entry rationale unavailable — source payload has not recorded it yet.',
+      posCostPending: 'cost data pending',
       seedHint: '4 answered · 3 partial · 3 unanswered',
       seedPct: '4 / 10 fully sourced',
       stFiltered: 'filtered', stWatched: 'watched', stDiscarded: 'discarded', stCandidate: 'candidate',
@@ -2847,6 +3456,16 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       thWatch: 'Watch', thWallet: 'Wallet', thState: 'State', thTags: 'GMGN tags',
       thPnl: 'Account PnL', thFifo: 'FIFO PnL', thTrades: 'Trades / 30d', thWin: 'Win rate',
       thScore: 'smart_score', thLast: 'Last active', thSignal: 'Signal', thTs: 'Ts',
+      ttWatch: 'Toggle to add or remove this wallet from the live follow set.',
+      ttWallet: 'Short address and alias. Click the row to open full wallet detail.',
+      ttState: 'candidate → filtered → watched, or discarded when tagged wash_trader / bot.',
+      ttTags: 'Tags scraped from GMGN. Struck through when the wallet is discarded.',
+      ttPnl: 'GMGN-reported realized PnL. Provider-sourced, scraped — not reconstructable by us.',
+      ttFifo: 'Our own FIFO reconstruction from on-chain fills. Deterministic, reproducible to the SOL.',
+      ttTrades: 'Number of executed trades on this wallet in the last 30 days.',
+      ttWin: 'Share of trades closed profitable, recomputed from the PnL distribution buckets — not GMGN\'s own number.',
+      ttScore: 'Composite ranking score used to prioritize the watch queue.',
+      ttLast: 'Time since this wallet\'s most recent on-chain trade.',
       thVeto: 'Veto', thResult: 'Result', thToken: 'Token', thScreen: 'screen',
       thHoneypot: 'honeypot', thTax: 'buy / sell tax', thMint: 'mint / freeze auth',
       thLp: 'LP locked', thTop10: 'top10', thWash: 'wash', thRug: 'rug',
@@ -2855,7 +3474,7 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       thStatus: 'Status', thBestExp: 'Best exp', thBestPf: 'Best PF', thBestWin: 'Best win',
       thEntryTs: 'Entry ts', thEntryPrice: 'Entry price', thSize: 'Size SOL', thStop: 'Stop',
       thTp1: 'TP 1', thTp2: 'TP 2', thTp3: 'TP 3', thDist: 'Dist to stop',
-      thHold: 'hold_secs', thRealized: 'realized_pnl_sol', thRoi: 'roi', thExit: 'exit_reason',
+      thHold: 'Hold', thRealized: 'Net PnL', thRoi: 'ROI', thExit: 'Exit reason',
       thServer: 'Server', thTools: 'Tools', thRate: 'Rate limit', thCache: 'Cache hit',
       thNotes: 'Notes', thSkill: 'Skill', thShots: 'Shots', thTokIn: 'Tok in',
       thTokOut: 'Tok out', thCost: 'Cost USD', thPolicy: 'Policy', thGrounding: 'Grounding',
@@ -2928,15 +3547,81 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       foot3: 'orkestrator hermes · vps-01 · uptime 34d 12h',
       hExitc: 'Kriteria keluar Fase 1 — knowledge-first', hVitals: 'Vital agen',
       hDigest: 'Ringkasan 24 jam — yang dilakukan agen semalam',
-      hFunnel: 'Corong harian — penyusutan harus terlihat',
+      hintPipeLive: 'langsung · pulsa tiap ~6d',
+      scopeAll: 'Sepanjang waktu', scope24h: '24 jam terakhir',
+      rowDetect: 'Deteksi sinyal', rowExec: 'Siklus trading',
+      edgeWatchlist: 'watchlist', edgeLive: 'langsung', edgeHold: '≤ hold',
+      provApi: '/api/pipeline · corong, latensi per aksi, split veto, activity24h, rata-rata hold',
+      stHarvestLbl: 'GMGN harvest', stHarvestMeta: 'wallet_profiles',
+      tipHarvestT: 'wallet_profiles', tipHarvestD: 'GMGN scraper · harvest wallet mentah',
+      stQualifyLbl: 'Qualify', stQualifyMeta: 'tag · gerbang duplikat',
+      tipQualifyT: 'wallet_profiles.qualified', tipQualifyD: 'aturan tag + dedup berdasarkan alamat',
+      stWalletsLbl: 'Smart wallets', stWalletsMeta: 'jumlah aktif',
+      tipWalletsT: 'wallet_profiles.status', tipWalletsD: 'ukuran watchlist smart-wallet yang aktif',
+      stBuyLbl: 'Sinyal beli', stBuyMeta: 'pembelian wallet terdeteksi',
+      tipBuyT: 'wallet_signals', tipBuyD: 'pembelian on-chain yang cocok dengan watchlist',
+      stScreenLbl: 'Screen', stScreenMeta: 'veto / lolos',
+      tipScreenT: 'screens.veto_reason', tipScreenD: 'safety veto · split lolos / tolak',
+      stEntryLbl: 'Paper entry', stEntryMeta: 'paper_trades',
+      tipEntryT: 'paper_trades', tipEntryD: 'status = open · posisi pada harga entry',
+      stMonitorLbl: 'Monitor', stMonitorMeta: 'posisi terbuka',
+      tipMonitorT: 'price_snapshots', tipMonitorD: 'mark price · status guard, bukan hitung mundur',
+      stExitLbl: 'Exit / Archive', stExitMeta: 'archives',
+      tipExitT: 'archives', tipExitD: 'net PnL setelah model gas + fee + slippage',
+      cHarvested: 'dipanen', cQualified: 'qualified', cSignals: 'sinyal beli', cScreened: 'lolos screen',
+      stScreenRate: 'tingkat lolos screen',
+      noteQualifyT: '1 · Qualify adalah tembok terbesar',
+      noteQualifyP: 'Sebagian besar wallet yang dipanen gagal aturan tag atau ter-dedup karena alamatnya sudah ada di watchlist.',
+      rDupAddr: 'alamat duplikat', rNoTag: 'tidak ada tag qualifying',
+      noteScreenT: '2 · Split veto Screen',
+      noteScreenP: 'Screen adalah jaring pengaman di atas sinyal smart-wallet, bukan edge utama.',
+      rLowLiq: 'likuiditas rendah', rFallKnife: 'falling knife', rHoneypot2: 'honeypot', rWashTrader2: 'wash_trader',
+      noteExitT: '3 · Alasan exit di Archive',
+      noteExitP: 'Net PnL dimodelkan setelah gas, fee, dan slippage sebelum trade diarsipkan.',
+      rTarget: 'target tercapai', rDipGuard: 'dip guard', rManual: 'ditutup manual', rStale2: 'stale · diarsipkan otomatis',
+      hFunnel: 'Alur pipeline — penyusutan harus terlihat',
       hVolDies: 'Di mana volume mati', hLegacy: 'Jalur discovery lama — sekunder',
       hWallets: 'Dompet yang berhasil kami pantau', hThree: 'Tiga status, tiga tampilan',
+      tabRoster: 'Roster', tabWalletDetail: 'Detail wallet', tabScanHistory: 'Riwayat Scan',
+      hScanTitle: 'Discovery Wallet — Riwayat Scan', scanSamplePill: 'data sampel',
+      hScanSubtitle: 'scan tiap jam · leaderboard smart-money',
+      scanRange24h: '24j', scanRange7d: '7h', scanRange30d: '30h', scanRangeAll: 'semua',
+      scanStatScansL: 'Scan dalam rentang', scanStatWalletsL: 'Wallet unik terlihat',
+      scanStatLatestL: 'Run terakhir · discan / lolos', scanStatTrackedL: 'Terlacak sekarang',
+      scanStatFlaggedL: 'Ditandai wash / bot',
+      hScanRunChart: 'Scan run dari waktu ke waktu', scanRunChartHint: 'discan vs. lolos, per run per jam · putus-putus = run hilang',
+      hScanFunnel: 'Funnel gate', scanFunnelHint: 'gate berurutan, satu wallet-run per tahap yang dilewati',
+      hScanRejects: 'Alasan penolakan',
+      hScanLedger: 'Ledger scan wallet', scanLedgerHint: 'satu baris per wallet per scan · klik baris untuk detail',
+      scanFilterAll: 'Semua', scanFilterPass: 'Lolos', scanFilterFail: 'Gagal',
+      thScanTs: 'Waktu scan', thWin7: 'Win 7h', thWin30: 'Win 30h', thTradesBS: 'Trade (B/S)',
+      thHolding: 'Holding j', thVol7: 'Volume 7h', thPnl7: 'PnL terealisasi 7h',
+      thGate: 'Gate', ttGate: 'Apakah wallet-run ini melewati semua tahap gate.', thRejectReason: 'Alasan tolak',
+      scanLedgerSrc: '= generator sampel · bukan sumber live',
+      hScanSens: 'Sensitivitas threshold', scanSensPill: 'sensitivitas · data sampel',
+      scanSensDesc: 'Read-only: berapa wallet-run sampel dalam rentang ini akan lolos bila gate win-rate 7h digeser.',
+      hScanHist: 'Distribusi dalam rentang ini',
+      scanJustNow: 'baru saja', scanAgo: 'lalu',
+      scanReasonWashBot: 'ditandai wash_trader / bot', scanReasonWin7: 'win rate 7h terlalu rendah',
+      scanReasonWin30: 'win rate 30h terlalu rendah', scanReasonTrades: 'trade terlalu sedikit', scanReasonHolding: 'holding terlalu lama',
+      scanNoRuns: 'tidak ada scan dalam rentang ini',
+      scanStageScanned: 'Discan', scanStageTag: 'Tag bersih', scanStageWin7: 'Win 7h ≥ 0.60',
+      scanStageWin30: 'Win 30h ≥ 0.50', scanStageTrades: 'Trade ≥ 150', scanStageHolding: 'Holding < 48j', scanStagePassed: 'Lolos',
+      scanLegendScanned: 'discan', scanLegendPassed: 'lolos', scanFail: 'gagal', scanNoRunTip: 'tidak ada scan jam ini',
+      scanLedgerEmptyT: 'Tidak ada scan yang cocok', scanLedgerEmptyW: 'Coba perluas rentang waktu atau hapus filter.',
+      scanSensLabel: 'win rate 7h ≥', scanSensCurrent: 'saat ini', scanSensWouldPass: 'akan lolos',
+      scanHistWin: 'Win rate 7h', scanHistTrades: 'Trade', scanHistHolding: 'Holding (j)',
+      scanDrawerSeries: 'Metrik antar scan', scanDrawerDelta: 'Terbaru vs. pertama terlihat',
+      scanDrawerGateHist: 'Riwayat gate', scanDrawerNote: 'Semua nilai di drawer ini adalah data sampel untuk keperluan desain.',
+      hPnlDist: 'Distribusi PnL — 5 bucket, bentuk sampel',
       hTrust: 'Dua kelas kepercayaan', hQueue: 'Antrean pantau',
       hVeto: 'Veto keamanan — gerbang, bukan keunggulan',
       hFinding: 'Temuan riset — skor tidak memisahkan',
       hTokens: 'Token tersaring — hari ini', hWalk: 'Walk-forward — H-0003',
       hWindow: 'Detail window', hHyp: 'Hipotesis', hGrave: 'Kuburan hipotesis',
-      hOpenPos: 'Posisi terbuka — paper_trades', hCost: 'Biaya adalah bagian dari hasil',
+      hPosTitle: 'Paper Positions & Entry Journal', posPaperOnly: 'paper only',
+      hPosTable: 'Entri — paper_trades', hOpenCards: 'Posisi terbuka — tampilan monitor',
+      hPosContract: 'Sumber data ini',
       hArch: 'Arsip — buku besar append-only', hCov: 'Cakupan lintas modul',
       hSeed: '10 pertanyaan awal — kriteria keluar Fase 1',
       hGraph: 'Graf pengetahuan — catatan dan keterkaitannya',
@@ -2960,12 +3645,14 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       htPnlDenom: 'PnL terealisasi tingkat akun adalah penyebut · win rate dihitung ulang dari bucket distribusi',
       htProv: 'Data GMGN bersumber provider ◆ · FIFO kami adalah komputasi =',
       lnLocked: '◌ Fase 5 terkunci', dropEmpty: 'kosong sampai ada exit',
-      whyFunnel: 'Mengapa tahap 05–07 kosong: <b>Fase 5 terkunci.</b>',
-      whenFunnel: 'Kapan terisi: saat gate go/no-go v3 lolos dan Fase 5 terbuka.',
-      gatesFunnel: 'Gerbangnya: GO/NO-GO ≥ +EV → H-0003 → cron theia-paper.',
-      whyFills: 'Tidak ada fill untuk ditampilkan.',
-      whenFills: 'Fill pertama muncul malam Fase 5 terbuka.',
-      gatesFills: 'Biaya divisualisasikan di sini: gas_sol · priority_fee · slippage per exit_reason.',
+      whyFunnel: 'Sumber langsung: <b>/api/pipeline</b> — jumlah corong, latensi per aksi, split veto, activity24h, dan rata-rata hold.',
+      whenFunnel: 'Tabel: wallet_profiles · wallet_signals · screens · paper_trades · archives · price_snapshots.',
+      gatesFunnel: 'Angka pada tampilan ini masih placeholder sampai API tersambung — lihat hook data-bind di markup.',
+      posFreshDefault: 'Belum ada fill paper trading tercatat · —',
+      posScopeOpen: 'Terbuka', posScopeAll: 'Semua', posScope24h: '24 jam terakhir',
+      posTableHint: 'signal → screen → entry → monitor → exit, satu baris per entri paper trade',
+      posArchHint: 'hanya trade yang sudah ditutup · bersih dari gas + fee + slippage',
+      posOpenCardsHint: 'status guard, bukan hitung mundur',
       mExp: 'Expectancy · out-of-sample', mPf: 'Profit Factor · out-of-sample',
       tk0: 'target 0', tk1: 'target 1', tkReached: 'tercapai',
       expStatus: '0 trade · belum ada sampel OOS', pfStatus: '0 trade · belum ada sampel OOS',
@@ -2983,12 +3670,44 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       vtSubTools: '1 belum terverifikasi · dexdata', vtSubLlm: '$0.11 / jam rata-rata · 412k token masuk',
       prEyebrow: 'Rel fase', prTitle: 'Gating peta jalan — cron dinyalakan satu per satu',
       prChip: 'Saat ini · Fase 1', prLocked: '7 fase · 5 terkunci',
-      lockTitle: 'Fase 5 terkunci — trading kertas belum aktif',
-      lockDesc: 'Ini "belum", bukan "rusak". Kertas saja: setiap fill disimulasikan dari cadangan, gas, dan biaya live — tidak ada kunci penandatanganan di mesin ini. Kriteria buka: gate GO/NO-GO v3 lolos (expectancy &gt; 0 DAN profit_factor &gt; 1 pada walk-forward) → cron theia-paper menyala → fill mulai disimulasikan.',
-      posEmptyT: '0 posisi terbuka',
-      posEmptyW: 'Mengapa: Fase 5 terkunci · Kapan: setelah gate v3 lolos · Gerbang: GO/NO-GO → cron theia-paper',
-      archEmptyT: '0 trade diarsipkan',
-      archEmptyW: 'Rincian exit_reason (stop / tp / trail / time_stop) muncul di sini lebih dulu.',
+      posStatOpenL: 'Posisi terbuka', posStatEntriesL: 'Entri hari ini',
+      posStatParkedL: 'Sinyal ditangguhkan / diblokir', posStatPnlL: 'Net PnL terealisasi',
+      posNoFillsShort: 'Belum ada fill paper trading tercatat.', posNoSignalsShort: 'Belum ada sinyal ditangguhkan atau diblokir.',
+      posPnlUnavail: 'Belum tersedia — belum ada trade yang ditutup.',
+      posFilterAll: 'Semua', posFilterOpen: 'Terbuka', posFilterParked: 'Ditangguhkan',
+      posFilterBlocked: 'Diblokir', posFilterClosed: 'Ditutup',
+      ttPosToken: 'Simbol/nama + alamat mint. Perluas baris untuk rasional entri lengkap.',
+      ttArchToken: 'Simbol/nama + alamat mint dari trade yang sudah ditutup.',
+      thSignalTs: 'Signal ts', ttSignalTs: 'wallet_signals.ts — saat pembelian wallet pemicu pertama kali terdeteksi.',
+      thLatency: 'Latency', ttLatency: 'Waktu antara deteksi sinyal dan simulasi fill.',
+      thEntryMcap: 'Entry mcap', ttEntryMcap: 'price_snapshots — market cap saat simulasi entry terjadi.',
+      thTriggerWallet: 'Wallet pemicu', ttTriggerWallet: 'Wallet yang diawasi dan pembeliannya memicu entri ini.',
+      thWalletScore: 'Skor wallet', ttWalletScore: 'wallet_profiles.smart_score saat sinyal terjadi.',
+      thRule: 'Hipotesis / rule', ttRule: 'Rule bernama yang meloloskan sinyal ini ke simulasi entry.',
+      ttRuleArch: 'Hipotesis/rule yang menjadi rujukan entri ini.',
+      ttScreenCol: 'screens.veto_reason — lolos atau veto dari safety screen.',
+      thCurrentPrice: 'Harga saat ini', thUnrealized: 'Unrealized PnL %',
+      ttUnrealized: 'Khusus posisi terbuka — mark price vs. harga entry, sebelum biaya exit.',
+      thExitTs: 'Exit ts', thPriceRange: 'Harga entry → exit', thMcapRange: 'Mcap entry → exit',
+      thGross: 'Gross PnL', thGas: 'Gas / fee', ttGas: 'Model base_fee + priority_fee untuk simulasi fill dan exit.',
+      thSlippage: 'Slippage', ttRealized: 'archives.realized_pnl_sol — gross PnL bersih dari gas, fee, dan slippage.',
+      posContractWhy: 'Belum ada endpoint tersambung. Tampilan ini merender bentuk PositionsPayload yang terdokumentasi (fetchedAt, positions[], archives[], summary) dan menampilkan empty state yang jujur sampai data itu ada — tidak ada yang dikarang di sini.',
+      posContractWhen: 'Tabel sumber: paper_trades · archives · wallet_signals · screens · price_snapshots · wallet_profiles.',
+      posContractGates: "TODO: sambungkan fetch('/api/positions') dan ganti POSITIONS_DATA dengan responsnya, pertahankan nama field yang sama.",
+      posEmptyDefaultT: 'Belum ada fill paper trading tercatat',
+      posEmptyDefaultW: 'Fase 5 belum menghasilkan entri simulasi — ledger ini siap terisi begitu paper_trades punya baris.',
+      posEmptyOpenT: '0 posisi terbuka',
+      posEmptyOpenW: 'Belum ada posisi paper terbuka saat ini — cek scope All atau Last 24h untuk aktivitas yang ditangguhkan, diblokir, atau ditutup.',
+      posEmpty24hT: 'Tidak ada entri dalam 24 jam terakhir',
+      posEmpty24hW: 'Tidak ada sinyal yang menghasilkan entri paper dalam 24 jam terakhir.',
+      posEmptyFilterT: 'Tidak ada entri yang cocok dengan filter ini',
+      posEmptyFilterW: 'Coba state lain, atau kembali ke All.',
+      posCardEmptyT: '0 posisi terbuka',
+      posCardEmptyW: 'Belum ada fill — ini bukan masalah ketersediaan data, Fase 5 memang belum menghasilkan satu pun.',
+      posArchEmptyT: '0 trade diarsipkan',
+      posArchEmptyW: 'Rincian exit_reason (stop / tp / trail / time_stop) muncul begitu ada trade paper yang ditutup.',
+      posRationaleUnavail: 'Rasional entri belum tersedia — payload sumber belum mencatatnya.',
+      posCostPending: 'data biaya belum tersedia',
       seedHint: '4 terjawab · 3 parsial · 3 belum terjawab',
       seedPct: '4 / 10 bersumber penuh',
       stFiltered: 'tersaring', stWatched: 'dipantau', stDiscarded: 'dibuang', stCandidate: 'kandidat',
@@ -3004,6 +3723,16 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       tToggleWatch: 'Alihkan pantauan', tCopyAddr: 'Salin alamat',
       thWatch: 'Pantau', thWallet: 'Dompet', thState: 'Status', thTags: 'Tag GMGN',
       thPnl: 'PnL Akun', thFifo: 'PnL FIFO', thTrades: 'Trade / 30 hari', thWin: 'Tingkat menang',
+      ttWatch: 'Alihkan untuk menambah atau menghapus wallet ini dari follow set aktif.',
+      ttWallet: 'Alamat singkat dan alias. Klik baris untuk membuka detail wallet lengkap.',
+      ttState: 'candidate → filtered → watched, atau discarded bila ditandai wash_trader / bot.',
+      ttTags: 'Tag hasil scrape dari GMGN. Dicoret jika wallet berstatus discarded.',
+      ttPnl: 'PnL terealisasi yang dilaporkan GMGN. Bersumber dari provider, di-scrape — tidak bisa kami rekonstruksi ulang.',
+      ttFifo: 'Rekonstruksi FIFO kami sendiri dari fill on-chain. Deterministik, reproducible hingga satuan SOL.',
+      ttTrades: 'Jumlah trade yang dieksekusi wallet ini dalam 30 hari terakhir.',
+      ttWin: 'Porsi trade yang ditutup profit, dihitung ulang dari bucket distribusi PnL — bukan angka dari GMGN.',
+      ttScore: 'Skor ranking gabungan yang dipakai untuk memprioritaskan watch queue.',
+      ttLast: 'Waktu sejak trade on-chain terakhir wallet ini.',
       thScore: 'smart_score', thLast: 'Aktif terakhir', thSignal: 'Sinyal', thTs: 'Ts',
       thVeto: 'Veto', thResult: 'Hasil', thToken: 'Token', thScreen: 'screen',
       thHoneypot: 'honeypot', thTax: 'pajak beli / jual', thMint: 'otorisasi mint / freeze',
@@ -3013,7 +3742,7 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       thStatus: 'Status', thBestExp: 'Exp terbaik', thBestPf: 'PF terbaik', thBestWin: 'Menang terbaik',
       thEntryTs: 'ts masuk', thEntryPrice: 'Harga masuk', thSize: 'Ukuran SOL', thStop: 'Stop',
       thTp1: 'TP 1', thTp2: 'TP 2', thTp3: 'TP 3', thDist: 'Jarak ke stop',
-      thHold: 'hold_secs', thRealized: 'realized_pnl_sol', thRoi: 'roi', thExit: 'exit_reason',
+      thHold: 'Hold', thRealized: 'PnL bersih', thRoi: 'ROI', thExit: 'Alasan exit',
       thServer: 'Server', thTools: 'Alat', thRate: 'Batas kecepatan', thCache: 'Cache hit',
       thNotes: 'Catatan', thSkill: 'Skill', thShots: 'Shots', thTokIn: 'Tok masuk',
       thTokOut: 'Tok keluar', thCost: 'Biaya USD', thPolicy: 'Kebijakan', thGrounding: 'Dasar',
@@ -3086,15 +3815,81 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       foot3: 'hermesオーケストレータ · vps-01 · 稼働34日12時間',
       hExitc: 'フェーズ1 終了条件 — ナレッジ先行', hVitals: 'エージェント死活',
       hDigest: '過去24時間のダイジェスト — 夜間に何をしたか',
-      hFunnel: 'デイリーファネル — 減少が可視であること',
+      hintPipeLive: 'ライブ・約6秒ごとにパルス',
+      scopeAll: '全期間', scope24h: '過去24時間',
+      rowDetect: 'シグナル検知', rowExec: 'トレードのライフサイクル',
+      edgeWatchlist: 'ウォッチリスト', edgeLive: 'ライブ', edgeHold: '≤ 保有',
+      provApi: '/api/pipeline · ファネル件数、アクション別レイテンシ、veto内訳、activity24h、平均保有時間',
+      stHarvestLbl: 'GMGN harvest', stHarvestMeta: 'wallet_profiles',
+      tipHarvestT: 'wallet_profiles', tipHarvestD: 'GMGNスクレイパー · 生ウォレット収集',
+      stQualifyLbl: 'Qualify', stQualifyMeta: 'タグ・重複ゲート',
+      tipQualifyT: 'wallet_profiles.qualified', tipQualifyD: 'タグルール + アドレスによる重複排除',
+      stWalletsLbl: 'Smart wallets', stWalletsMeta: 'アクティブ件数',
+      tipWalletsT: 'wallet_profiles.status', tipWalletsD: 'アクティブなスマートウォレット・ウォッチリストの件数',
+      stBuyLbl: '買いシグナル', stBuyMeta: 'ウォレットの購入を検知',
+      tipBuyT: 'wallet_signals', tipBuyD: 'ウォッチリストに一致したオンチェーン購入',
+      stScreenLbl: 'Screen', stScreenMeta: 'veto / 通過',
+      tipScreenT: 'screens.veto_reason', tipScreenD: 'セーフティveto · 通過 / 拒否の内訳',
+      stEntryLbl: 'Paper entry', stEntryMeta: 'paper_trades',
+      tipEntryT: 'paper_trades', tipEntryD: 'status = open · エントリー価格でのポジション',
+      stMonitorLbl: 'Monitor', stMonitorMeta: '保有中のポジション',
+      tipMonitorT: 'price_snapshots', tipMonitorD: 'マーク価格 · カウントダウンではなくガード状態',
+      stExitLbl: 'Exit / Archive', stExitMeta: 'archives',
+      tipExitT: 'archives', tipExitD: 'ガス・手数料・スリッページを織り込んだ純損益',
+      cHarvested: '収集済み', cQualified: 'qualified', cSignals: '買いシグナル', cScreened: 'screen通過',
+      stScreenRate: 'screen通過率',
+      noteQualifyT: '1 · Qualifyが最大の壁',
+      noteQualifyP: '収集したウォレットの多くはタグルールで弾かれるか、既にウォッチリストにあるアドレスと重複排除されます。',
+      rDupAddr: '重複アドレス', rNoTag: '該当タグなし',
+      noteScreenT: '2 · Screenのveto内訳',
+      noteScreenP: 'Screenはスマートウォレットのシグナルの上にある安全網であり、主なエッジではありません。',
+      rLowLiq: '流動性不足', rFallKnife: 'falling knife', rHoneypot2: 'honeypot', rWashTrader2: 'wash_trader',
+      noteExitT: '3 · Archiveでのexit理由',
+      noteExitP: 'トレードがアーカイブされる前に、ガス・手数料・スリッページを織り込んで純損益をモデル化します。',
+      rTarget: 'target達成', rDipGuard: 'dip guard', rManual: '手動クローズ', rStale2: 'stale · 自動アーカイブ',
+      hFunnel: 'パイプラインフロー — 減少が可視であること',
       hVolDies: 'ボリュームが消える場所', hLegacy: '旧ディスカバリー経路 — 補助',
       hWallets: '追跡中のウォレット', hThree: '3つの状態、3つの見た目',
+      tabRoster: 'ロスター', tabWalletDetail: 'ウォレット詳細', tabScanHistory: 'スキャン履歴',
+      hScanTitle: 'ウォレット発見 — スキャン履歴', scanSamplePill: 'サンプルデータ',
+      hScanSubtitle: '毎時スキャン · スマートマネー・リーダーボード',
+      scanRange24h: '24時間', scanRange7d: '7日', scanRange30d: '30日', scanRangeAll: 'すべて',
+      scanStatScansL: '範囲内のスキャン数', scanStatWalletsL: '発見したユニークウォレット',
+      scanStatLatestL: '直近の実行 · スキャン / 通過', scanStatTrackedL: '現在追跡中',
+      scanStatFlaggedL: 'wash / bot判定',
+      hScanRunChart: '時系列スキャン実行', scanRunChartHint: 'スキャン数 vs 通過数、毎時実行 · 破線 = 欠測した実行',
+      hScanFunnel: 'ゲートファネル', scanFunnelHint: '順次ゲート、各ステージを通過したウォレット実行数',
+      hScanRejects: '却下理由',
+      hScanLedger: 'ウォレットスキャン台帳', scanLedgerHint: 'スキャンごとにウォレット1件 · 行をクリックで詳細',
+      scanFilterAll: 'すべて', scanFilterPass: '通過', scanFilterFail: '却下',
+      thScanTs: 'スキャン時刻', thWin7: '勝率7日', thWin30: '勝率30日', thTradesBS: '取引(買/売)',
+      thHolding: '保有時間', thVol7: '出来高7日', thPnl7: '実現PnL 7日',
+      thGate: 'ゲート', ttGate: 'このウォレット実行がすべてのゲートステージを通過したか。', thRejectReason: '却下理由',
+      scanLedgerSrc: '= サンプル生成 · ライブソースではありません',
+      hScanSens: '閾値感度分析', scanSensPill: '感度分析 · サンプルデータ',
+      scanSensDesc: '読み取り専用：7日勝率ゲートを動かした場合、範囲内のサンプルウォレット実行が何件通過するか。',
+      hScanHist: '範囲内の分布',
+      scanJustNow: 'たった今', scanAgo: '前',
+      scanReasonWashBot: 'wash_trader / botと判定', scanReasonWin7: '勝率7日が低すぎる',
+      scanReasonWin30: '勝率30日が低すぎる', scanReasonTrades: '取引数が少なすぎる', scanReasonHolding: '保有時間が長すぎる',
+      scanNoRuns: 'この範囲にスキャンはありません',
+      scanStageScanned: 'スキャン済み', scanStageTag: 'タグクリーン', scanStageWin7: '勝率7日 ≥ 0.60',
+      scanStageWin30: '勝率30日 ≥ 0.50', scanStageTrades: '取引数 ≥ 150', scanStageHolding: '保有時間 < 48時間', scanStagePassed: '通過',
+      scanLegendScanned: 'スキャン', scanLegendPassed: '通過', scanFail: '却下', scanNoRunTip: 'この時間はスキャンなし',
+      scanLedgerEmptyT: 'この条件に一致するスキャンはありません', scanLedgerEmptyW: '期間を広げるかフィルタを解除してください。',
+      scanSensLabel: '勝率7日 ≥', scanSensCurrent: '現在値', scanSensWouldPass: '件が通過見込み',
+      scanHistWin: '勝率7日', scanHistTrades: '取引数', scanHistHolding: '保有時間(h)',
+      scanDrawerSeries: 'スキャン間の指標推移', scanDrawerDelta: '最新 vs 初回観測',
+      scanDrawerGateHist: 'ゲート履歴', scanDrawerNote: 'このドロワーの値はすべてデザイン用のサンプルデータです。',
+      hPnlDist: 'PnL分布 — 5バケット、サンプル形状',
       hTrust: '2種類の信頼性', hQueue: 'ウォッチ待機列',
       hVeto: '安全拒否 — エッジではなくゲート',
       hFinding: '研究結果 — スコアは分離しない',
       hTokens: 'スクリーニング済みトークン — 今日', hWalk: 'ウォークフォワード — H-0003',
       hWindow: 'ウィンドウ詳細', hHyp: '仮説', hGrave: '仮説の墓場',
-      hOpenPos: 'オープンポジション — paper_trades', hCost: 'コストは結果の一部',
+      hPosTitle: 'Paper Positions & Entry Journal', posPaperOnly: 'paper only',
+      hPosTable: 'エントリー — paper_trades', hOpenCards: 'オープンポジション — モニター表示',
+      hPosContract: 'このデータの出所',
       hArch: 'アーカイブ — 追記のみの台帳', hCov: 'モジュール別カバレッジ',
       hSeed: 'シード質問10件 — フェーズ1終了条件',
       hGraph: 'ナレッジグラフ — ノートとリンク',
@@ -3118,12 +3913,14 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       htPnlDenom: '口座レベルの実現PnLが分母 · 勝率は分布バケットから再計算',
       htProv: 'GMGNデータはプロバイダ由来 ◆ · 当社FIFOは計算 =',
       lnLocked: '◌ フェーズ5はロック中', dropEmpty: 'エグジットが発生するまで空',
-      whyFunnel: 'ステージ05–07が空の理由：<b>フェーズ5がロック中。</b>',
-      whenFunnel: 'いつ埋まるか：v3 go/no-goゲート通過時にフェーズ5が解放。',
-      gatesFunnel: 'ゲート：GO/NO-GO ≥ +EV → H-0003 → theia-paper cron。',
-      whyFills: '表示する約定がありません。',
-      whenFills: '初回の約定はフェーズ5解放の夜に現れる。',
-      gatesFills: 'ここで可視化されるコスト：gas_sol · priority_fee · exit_reasonごとのslippage。',
+      whyFunnel: 'ライブソース：<b>/api/pipeline</b> — ファネル件数、アクション別レイテンシ、veto内訳、activity24h、平均保有時間。',
+      whenFunnel: 'テーブル：wallet_profiles · wallet_signals · screens · paper_trades · archives · price_snapshots。',
+      gatesFunnel: 'この画面の数値はAPI接続までプレースホルダーです — マークアップ内のdata-bindフックを参照。',
+      posFreshDefault: 'ペーパー約定はまだ記録されていません · —',
+      posScopeOpen: 'オープン', posScopeAll: 'すべて', posScope24h: '過去24時間',
+      posTableHint: 'signal → screen → entry → monitor → exit、ペーパーエントリー1件につき1行',
+      posArchHint: 'クローズ済み取引のみ · ガス+手数料+スリッページ控除後',
+      posOpenCardsHint: 'カウントダウンではなくガード状態',
       mExp: 'Expectancy · アウトオブサンプル', mPf: 'Profit Factor · アウトオブサンプル',
       tk0: 'ターゲット 0', tk1: 'ターゲット 1', tkReached: '到達済み',
       expStatus: '0トレード · OOSサンプル未取得', pfStatus: '0トレード · OOSサンプル未取得',
@@ -3141,12 +3938,44 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       vtSubTools: '1未検証 · dexdata', vtSubLlm: '$0.11 / 時 平均 · 入力412kトークン',
       prEyebrow: 'フェーズレール', prTitle: 'ロードマップゲート — cronは一つずつ有効化',
       prChip: '現在 · フェーズ1', prLocked: '7フェーズ · 5ロック中',
-      lockTitle: 'フェーズ5はロック中 — ペーパートレード未有効',
-      lockDesc: 'これは「未実施」であって「故障」ではない。ペーパーのみ：すべての約定はライブの準備金・ガス・手数料からシミュレーション — このマシンに署名キーはありません。解放条件：v3 GO/NO-GOゲート通過（ウォークフォワードでexpectancy &gt; 0 かつ profit_factor &gt; 1）→ theia-paper cron起動 → 約定シミュレーション開始。',
-      posEmptyT: 'オープンポジション0件',
-      posEmptyW: '理由：フェーズ5ロック中 · 時期：v3ゲート通過後 · ゲート：GO/NO-GO → theia-paper cron',
-      archEmptyT: 'アーカイブ取引0件',
-      archEmptyW: 'exit_reason内訳（stop / tp / trail / time_stop）はまずここに表示される。',
+      posStatOpenL: 'オープンポジション', posStatEntriesL: '本日のエントリー',
+      posStatParkedL: '保留 / ブロックされたシグナル', posStatPnlL: '実現純損益',
+      posNoFillsShort: 'ペーパー約定はまだ記録されていません。', posNoSignalsShort: '保留・ブロックされたシグナルはまだありません。',
+      posPnlUnavail: '未提供 — クローズ済み取引がまだありません。',
+      posFilterAll: 'すべて', posFilterOpen: 'オープン', posFilterParked: '保留',
+      posFilterBlocked: 'ブロック', posFilterClosed: 'クローズ',
+      ttPosToken: 'シンボル/名称 + mintアドレス。行を展開するとエントリーの根拠全体が見えます。',
+      ttArchToken: 'クローズ済み取引のシンボル/名称 + mintアドレス。',
+      thSignalTs: 'Signal ts', ttSignalTs: 'wallet_signals.ts — トリガーウォレットの購入が最初に検知された時刻。',
+      thLatency: 'Latency', ttLatency: 'シグナル検知からシミュレーション約定までの時間。',
+      thEntryMcap: 'Entry mcap', ttEntryMcap: 'price_snapshots — シミュレーションエントリー時点の時価総額。',
+      thTriggerWallet: 'トリガーウォレット', ttTriggerWallet: 'このエントリーを発生させた購入を行った監視対象ウォレット。',
+      thWalletScore: 'ウォレットスコア', ttWalletScore: 'シグナル発生時のwallet_profiles.smart_score。',
+      thRule: 'Hypothesis / rule', ttRule: 'このシグナルをシミュレーションエントリーに適格とした名前付きルール。',
+      ttRuleArch: 'このエントリーが遡るhypothesis/rule。',
+      ttScreenCol: 'screens.veto_reason — セーフティスクリーンの通過またはveto。',
+      thCurrentPrice: '現在価格', thUnrealized: 'Unrealized PnL %',
+      ttUnrealized: 'オープンポジションのみ — exitコスト前のマーク価格とエントリー価格の比較。',
+      thExitTs: 'Exit ts', thPriceRange: 'エントリー→exit価格', thMcapRange: 'エントリー→exit時価総額',
+      thGross: 'Gross PnL', thGas: 'ガス / 手数料', ttGas: 'シミュレーション約定とexitのモデル化されたbase_fee + priority_fee。',
+      thSlippage: 'Slippage', ttRealized: 'archives.realized_pnl_sol — ガス・手数料・スリッページ控除後のgross PnL。',
+      posContractWhy: 'エンドポイントはまだ接続されていません。この画面はドキュメント化されたPositionsPayload形状（fetchedAt、positions[]、archives[]、summary）をレンダリングし、データが存在するまで正直な空状態を表示します — ここには何も捏造されていません。',
+      posContractWhen: 'ソーステーブル：paper_trades · archives · wallet_signals · screens · price_snapshots · wallet_profiles。',
+      posContractGates: "TODO: fetch('/api/positions')を接続し、同じフィールド名を保ったままPOSITIONS_DATAをレスポンスに置き換える。",
+      posEmptyDefaultT: 'ペーパー約定はまだ記録されていません',
+      posEmptyDefaultW: 'フェーズ5はまだシミュレーションエントリーを生成していません — paper_tradesに行ができ次第、この台帳は反映される準備ができています。',
+      posEmptyOpenT: 'オープンポジション0件',
+      posEmptyOpenW: '現在オープンなペーパーポジションはありません — 保留・ブロック・クローズ済みの活動はAllまたはLast 24hのスコープを確認してください。',
+      posEmpty24hT: '過去24時間にエントリーはありません',
+      posEmpty24hW: '過去24時間にペーパーエントリーを生成したシグナルはありませんでした。',
+      posEmptyFilterT: 'このフィルタに一致するエントリーはありません',
+      posEmptyFilterW: '別のstateを試すか、Allに戻してください。',
+      posCardEmptyT: 'オープンポジション0件',
+      posCardEmptyW: 'まだ約定がありません — データ未提供の問題ではなく、フェーズ5がまだ一件も生成していないだけです。',
+      posArchEmptyT: 'アーカイブ取引0件',
+      posArchEmptyW: 'exit_reason内訳（stop / tp / trail / time_stop）はペーパー取引がクローズ次第表示されます。',
+      posRationaleUnavail: 'エントリーの根拠は未提供 — ソースペイロードにまだ記録されていません。',
+      posCostPending: 'コストデータ未提供',
       seedHint: '回答4 · 部分3 · 未回答3',
       seedPct: '4 / 10 完全にソース付き',
       stFiltered: 'フィルタ通過', stWatched: 'ウォッチ中', stDiscarded: '破棄済み', stCandidate: '候補',
@@ -3162,6 +3991,16 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       tToggleWatch: 'ウォッチ切替', tCopyAddr: 'アドレスをコピー',
       thWatch: 'ウォッチ', thWallet: 'ウォレット', thState: '状態', thTags: 'GMGNタグ',
       thPnl: 'アカウントPnL', thFifo: 'FIFO PnL', thTrades: '取引 / 30日', thWin: '勝率',
+      ttWatch: 'このウォレットをライブのフォローセットに追加・削除します。',
+      ttWallet: '短縮アドレスとエイリアス。行をクリックするとウォレットの詳細が開きます。',
+      ttState: 'candidate → filtered → watched、wash_trader / botタグが付くとdiscardedに。',
+      ttTags: 'GMGNからスクレイプしたタグ。discarded状態では取り消し線で表示。',
+      ttPnl: 'GMGN報告の実現PnL。プロバイダー由来のスクレイプデータで、当方では再構築できません。',
+      ttFifo: 'オンチェーンの約定から独自に再構築したFIFO損益。決定論的でSOL単位まで再現可能。',
+      ttTrades: 'このウォレットが過去30日間に実行した取引数。',
+      ttWin: 'PnL分布バケットから再計算した勝率 — GMGN自体の数値ではありません。',
+      ttScore: 'ウォッチキューの優先順位付けに使う複合ランキングスコア。',
+      ttLast: 'このウォレットの直近オンチェーン取引からの経過時間。',
       thScore: 'smart_score', thLast: '最終アクティブ', thSignal: 'シグナル', thTs: 'Ts',
       thVeto: '拒否ゲート', thResult: '結果', thToken: 'トークン', thScreen: 'screen',
       thHoneypot: 'honeypot', thTax: '買/売税', thMint: 'mint / freeze権限',
@@ -3171,7 +4010,7 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       thStatus: 'ステータス', thBestExp: '最良Exp', thBestPf: '最良PF', thBestWin: '最良勝率',
       thEntryTs: 'エントリts', thEntryPrice: 'エントリ価格', thSize: 'サイズSOL', thStop: 'ストップ',
       thTp1: 'TP 1', thTp2: 'TP 2', thTp3: 'TP 3', thDist: 'ストップまでの距離',
-      thHold: 'hold_secs', thRealized: 'realized_pnl_sol', thRoi: 'roi', thExit: 'exit_reason',
+      thHold: '保有時間', thRealized: '純損益', thRoi: 'ROI', thExit: 'Exit理由',
       thServer: 'サーバー', thTools: 'ツール', thRate: 'レート制限', thCache: 'キャッシュヒット',
       thNotes: '備考', thSkill: 'スキル', thShots: 'ショット', thTokIn: 'トーク入力',
       thTokOut: 'トーク出力', thCost: 'コストUSD', thPolicy: 'ポリシー', thGrounding: '根拠',
@@ -3192,6 +4031,7 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
   };
   var savedLang = 'en';
   try { savedLang = localStorage.getItem('theia-lang') || 'en'; } catch (e) {}
+  window.I18N = I18N; window.savedLang = savedLang; // read-only exposure for other view scripts (e.g. Positions)
   function applyLang(lang) {
     if (!I18N[lang]) lang = 'en';
     var t = I18N[lang];
@@ -3637,16 +4477,15 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
       var gPnlCls = pnlColor(w.gmgnPnl), fPnlCls = pnlColor(w.fifo);
       return '<tr class="row-click" data-addr="' + esc(w.addr) + '">' +
         '<td><button class="switch' + (w.state === 'watched' ? ' on' : '') + '" data-watch="' + esc(w.addr) + '" title="' + I18N[savedLang].tToggleWatch + '" aria-label="' + I18N[savedLang].tToggleWatch + '"></button></td>' +
-        '<td><span class="addr">' + esc(w.short) + '</span><span class="sub muted">' + esc(w.alias) + '</span></td>' +
+        '<td><span class="wallet-td-inner"><span class="wallet-cell"><span class="addr">' + esc(w.short) + '</span><span class="sub muted">' + esc(w.alias) + '</span></span><button class="btn-icon copy-btn" title="' + I18N[savedLang].tCopyAddr + '" aria-label="' + I18N[savedLang].tCopyAddr + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></span></td>' +
         '<td><span class="pill ' + st[0] + '">' + stLabel + '</span></td>' +
         '<td>' + tags + '</td>' +
-        '<td class="num ' + gPnlCls + '"><span class="dc dc-prov" style="margin-right:6px;">◆</span><b>' + esc(w.gmgnPnl) + '</b></td>' +
-        '<td class="num ' + fPnlCls + '"><span class="dc dc-calc" style="margin-right:6px;">=</span>' + esc(w.fifo) + '</td>' +
+        '<td class="num ' + gPnlCls + '"><b>' + esc(w.gmgnPnl) + '</b></td>' +
+        '<td class="num ' + fPnlCls + '">' + esc(w.fifo) + '</td>' +
         '<td class="num">' + w.trades + '</td>' +
         '<td class="num ' + winCls + '">' + esc(w.win) + '<span class="sub muted">n=' + w.winN + '</span></td>' +
         '<td class="num">' + w.score + '</td>' +
         '<td class="num">' + esc(w.last) + '</td>' +
-        '<td><button class="btn-icon copy-btn" title="' + I18N[savedLang].tCopyAddr + '" aria-label="' + I18N[savedLang].tCopyAddr + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></td>' +
         '</tr>';
     }).join('');
     bindWatchToggles();
@@ -3729,6 +4568,8 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
     document.getElementById('walletTabs').querySelector('[data-sub="detail"]').classList.add('active');
     document.getElementById('sub-roster').style.display = 'none';
     document.getElementById('sub-detail').style.display = 'block';
+    var subScanEl = document.getElementById('sub-scan');
+    if (subScanEl) subScanEl.style.display = 'none';
   }
 
   /* V2 tabs */
@@ -3739,6 +4580,8 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
     var sub = b.getAttribute('data-sub');
     document.getElementById('sub-roster').style.display = sub === 'roster' ? 'block' : 'none';
     document.getElementById('sub-detail').style.display = sub === 'detail' ? 'block' : 'none';
+    var subScanEl = document.getElementById('sub-scan');
+    if (subScanEl) subScanEl.style.display = sub === 'scan' ? 'block' : 'none';
   });
   var search = document.getElementById('walletSearch');
   if (search) search.addEventListener('input', function () { renderWalletRows(search.value); });
@@ -3781,6 +4624,900 @@ html[lang="ja"] .sb-label { letter-spacing: 0.01em; }
   if (start === 'auth-account') renderAccount();
 })();
 </script>
+<script>
+(function () {
+  var flow = document.getElementById('pipeFlow');
+  if (!flow) return;
+  var nodes = Array.prototype.slice.call(flow.querySelectorAll('.pipe-node'));
+  var connectors = Array.prototype.slice.call(flow.querySelectorAll('.pipe-connector'));
+  var HOP_MS = 260;
 
+  function pulseNode(i) {
+    var n = nodes[i];
+    if (!n) return;
+    n.classList.add('pulse');
+    setTimeout(function () { n.classList.remove('pulse'); }, 700);
+  }
+  function runConnector(i) {
+    var c = connectors[i];
+    if (!c || c.classList.contains('locked')) return;
+    c.classList.remove('run');
+    void c.offsetWidth;
+    c.classList.add('run');
+  }
+  function runPulse() {
+    pulseNode(0);
+    for (var i = 0; i < connectors.length; i++) {
+      (function (i) {
+        setTimeout(function () {
+          runConnector(i);
+          setTimeout(function () { pulseNode(i + 1); }, HOP_MS * 0.85);
+        }, i * HOP_MS);
+      })(i);
+    }
+  }
+  runPulse();
+  setInterval(runPulse, 6000);
+})();
+</script>
+<script>
+(function () {
+  // MOCK data shaped to match the real /api/pipeline response (funnel counts,
+  // latency by action, veto split, activity24h, avg hold). Swap PIPE_DATA for
+  // a fetch('/api/pipeline') call and keep the same field names to go live.
+  var PIPE_DATA = {
+    all: {
+      counts: { harvest: '12,847', qualify: '3,214', wallets: '186', buy: '96', screenPass: '78', screenVeto: '18', entry: '78', monitor: '12', exit: '66' },
+      screenEx: 'fail', screenExText: 'veto · low liquidity',
+      monitorPnlCls: 'ok', monitorPnl: '+14.2%', monitorGuard: 'guard: trailing dip 8%',
+      exitPnlCls: 'ok', exitPnl: '+6.8%', exitNote: 'net of gas + fees + slippage',
+      fresh: 'updated 2m ago · fresh', freshWarn: false
+    },
+    h24: {
+      counts: { harvest: '0', qualify: '0', wallets: '186', buy: '0', screenPass: '0', screenVeto: '0', entry: '0', monitor: '0', exit: '0' },
+      screenEx: 'flat', screenExText: 'no signals in the last 24h',
+      monitorPnlCls: 'flat', monitorPnl: '—', monitorGuard: 'no open positions opened today',
+      exitPnlCls: 'flat', exitPnl: '—', exitNote: 'no exits in the last 24h',
+      fresh: 'no activity in the last 24h · last signal 3d ago', freshWarn: true
+    }
+  };
+  var flow = document.getElementById('pipeFlow');
+  var toggle = document.getElementById('pipeScopeToggle');
+  var freshEl = document.getElementById('pipeFreshness');
+  if (!flow || !toggle) return;
+  function setField(name, value) {
+    var el = flow.querySelector('[data-bind="' + name + '"]');
+    if (el) el.textContent = value;
+  }
+  function setClass(name, cls) {
+    var el = flow.querySelector('[data-bind-cls="' + name + '"]');
+    if (el) el.className = 'pill ' + cls;
+  }
+  function renderScope(scope) {
+    var d = PIPE_DATA[scope];
+    if (!d) return;
+    Object.keys(d.counts).forEach(function (k) { setField(k, d.counts[k]); });
+    setField('screenEx', d.screenExText);
+    setClass('screenCls', d.screenEx);
+    setField('monitorPnl', d.monitorPnl);
+    setField('monitorGuard', d.monitorGuard);
+    setClass('monitorPnlCls', d.monitorPnlCls);
+    setField('exitPnl', d.exitPnl);
+    setField('exitNote', d.exitNote);
+    setClass('exitPnlCls', d.exitPnlCls);
+    if (freshEl) { freshEl.textContent = d.fresh; freshEl.classList.toggle('stale-text', d.freshWarn); }
+  }
+  Array.prototype.forEach.call(toggle.querySelectorAll('.scope-opt'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(toggle.querySelectorAll('.scope-opt'), function (b) {
+        b.classList.remove('active'); b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      renderScope(btn.getAttribute('data-scope'));
+    });
+  });
+  renderScope('all');
+})();
+</script>
+
+<script>
+(function () {
+  // TODO(positions): replace POSITIONS_DATA with fetch('/api/positions') once the endpoint
+  // exists. Shape mirrors PositionsPayload: fetchedAt, positions[] (one row per paper_trades
+  // entry — open/parked/blocked/closed), archives[] (one row per archives record, closed
+  // trades only), summary (aggregate counts). Field names should track the real tables:
+  // paper_trades, archives, wallet_signals, screens, price_snapshots, wallet_profiles.
+  // Left empty on purpose — Phase 5 has not produced a real fill yet, so nothing here is
+  // fabricated. Populate positions/archives with real payload rows when the API exists.
+  var POSITIONS_DATA = {
+    fetchedAt: null,
+    positions: [],
+    archives: [],
+    summary: { open: 0, entries24h: 0, parked: 0, blocked: 0, realizedNetPnlSol: null }
+  };
+
+  var tableBody = document.getElementById('posTableBody');
+  if (!tableBody) return; // view-v5 markup not present — nothing to wire up
+
+  var els = {
+    statOpen: document.getElementById('statOpen'), statOpenNote: document.getElementById('statOpenNote'),
+    statEntries: document.getElementById('statEntries'), statEntriesNote: document.getElementById('statEntriesNote'),
+    statParked: document.getElementById('statParked'), statParkedNote: document.getElementById('statParkedNote'),
+    statPnl: document.getElementById('statPnl'), statPnlNote: document.getElementById('statPnlNote'),
+    freshness: document.getElementById('posFreshness'), tableFreshness: document.getElementById('posTableFreshness'),
+    tableBody: tableBody, cardGrid: document.getElementById('posCardGrid'),
+    archBody: document.getElementById('archTableBody'),
+    scopeToggle: document.getElementById('posScopeToggle'), filter: document.getElementById('posFilter')
+  };
+
+  var posState = { scope: 'all', filter: 'all' };
+
+  function t() { var dict = window.I18N || {}; return dict[window.savedLang] || dict.en || {}; }
+  function tr(key, fallback) { var d = t(); return d[key] || fallback; }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+  function nz(v, fallback) { return (v === null || v === undefined || v === '') ? (fallback || '—') : v; }
+  function fmtSigned(n, suffix) { if (n === null || n === undefined) return '—'; return (n >= 0 ? '+' : '') + n + (suffix || ''); }
+
+  function scopedPositions() {
+    var list = POSITIONS_DATA.positions.slice();
+    if (posState.scope === 'open') list = list.filter(function (p) { return p.state === 'open'; });
+    if (posState.scope === 'h24') list = list.filter(function (p) { return p.entryTs && (Date.now() - p.entryTs) <= 86400000; });
+    if (posState.filter !== 'all') list = list.filter(function (p) { return p.state === posState.filter; });
+    return list;
+  }
+
+  function tableEmptyCopy() {
+    if (posState.filter !== 'all') return { title: tr('posEmptyFilterT', 'No entries match this filter'), why: tr('posEmptyFilterW', 'Try a different state, or switch back to All.') };
+    if (posState.scope === 'open') return { title: tr('posEmptyOpenT', '0 open positions'), why: tr('posEmptyOpenW', 'No open paper positions right now.') };
+    if (posState.scope === 'h24') return { title: tr('posEmpty24hT', 'No entries in the last 24h'), why: tr('posEmpty24hW', 'No signal produced a paper entry in the last 24 hours.') };
+    return { title: tr('posEmptyDefaultT', 'No paper fills recorded yet'), why: tr('posEmptyDefaultW', "Phase 5 hasn't produced a simulated entry yet.") };
+  }
+
+  // Renders one paper_trades row + its (initially collapsed) rationale detail row.
+  // Kept fully generic so the table lights up correctly the moment POSITIONS_DATA.positions
+  // is populated from a real payload — nothing below invents data, it only formats it.
+  function renderPositionRow(p, i) {
+    var rid = 'pos-detail-' + i;
+    var stateCls = p.state === 'open' ? 'ok' : p.state === 'closed' ? 'locked' : p.state === 'blocked' ? 'fail' : 'warn';
+    var screenCls = p.screen && p.screen.result === 'veto' ? 'fail' : 'ok';
+    var row = '<tr class="row-click" data-detail="' + rid + '">' +
+      '<td class="pos-token-td"><span class="pos-token-cell">' +
+      '<button type="button" class="pos-expand-btn" data-expand="' + rid + '" aria-expanded="false" aria-controls="' + rid + '" title="' + esc(tr('ttPosToken', 'Expand entry rationale')) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>' +
+      '<span class="pos-token-meta"><b>' + esc(nz(p.tokenSymbol)) + '</b><span class="addr mono small muted">' + esc(nz(p.mint)) + '</span></span>' +
+      '<button type="button" class="btn-icon copy-btn" data-copy="' + esc(p.mint || '') + '" title="' + esc(tr('tCopyAddr', 'Copy address')) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>' +
+      '</span></td>' +
+      '<td class="num">' + esc(nz(p.signalTsLabel)) + '</td>' +
+      '<td class="num">' + esc(nz(p.entryTsLabel)) + '</td>' +
+      '<td class="num">' + esc(nz(p.latencyLabel)) + '</td>' +
+      '<td class="num">' + esc(nz(p.entryPrice)) + '</td>' +
+      '<td class="num">' + esc(nz(p.entryMcap)) + '</td>' +
+      '<td class="num">' + esc(nz(p.sizeSol)) + '</td>' +
+      '<td>' + esc(nz(p.triggerWallet && p.triggerWallet.alias)) + '</td>' +
+      '<td class="num">' + esc(nz(p.triggerWallet && p.triggerWallet.score)) + '</td>' +
+      '<td>' + esc(nz(p.rule && p.rule.name)) + '</td>' +
+      '<td><span class="pill ' + screenCls + '">' + esc(nz(p.screen && p.screen.result)) + '</span></td>' +
+      '<td class="num">' + esc(nz(p.stop)) + '</td>' +
+      '<td class="num">' + esc(nz(p.tp1)) + '</td>' +
+      '<td class="num">' + esc(nz(p.tp2)) + '</td>' +
+      '<td class="num">' + esc(nz(p.tp3)) + '</td>' +
+      '<td class="num">' + esc(p.state === 'open' ? nz(p.currentPrice) : '—') + '</td>' +
+      '<td class="num">' + (p.state === 'open' ? fmtSigned(p.unrealizedPct, '%') : '—') + '</td>' +
+      '<td><span class="pill ' + stateCls + '">' + esc(p.state) + '</span></td>' +
+      '</tr>';
+    var rationale = p.rationale;
+    var detailBody = rationale ? (
+      '<div class="pos-detail">' +
+        '<div class="pos-detail-group"><h4>' + esc(tr('thTriggerWallet', 'Trigger wallet')) + '</h4><dl class="kv">' +
+          '<dt>' + esc(tr('thTriggerWallet', 'Wallet')) + '</dt><dd>' + esc(nz(rationale.walletReason)) + '</dd>' +
+          '<dt>' + esc(tr('thSignalTs', 'Signal ts')) + '</dt><dd>' + esc(nz(rationale.signalAge)) + '</dd>' +
+        '</dl></div>' +
+        '<div class="pos-detail-group"><h4>' + esc(tr('thRule', 'Hypothesis / rule')) + '</h4><dl class="kv">' +
+          '<dt>ID</dt><dd>' + esc(nz(rationale.ruleId)) + '</dd>' +
+          '<dt>' + esc(tr('thRule', 'Rule')) + '</dt><dd>' + esc(nz(rationale.ruleCondition)) + '</dd>' +
+        '</dl></div>' +
+        '<div class="pos-detail-group"><h4>' + esc(tr('ttScreenCol', 'Safety screen')) + '</h4><dl class="kv">' +
+          '<dt>honeypot</dt><dd>' + esc(nz(rationale.honeypot)) + '</dd>' +
+          '<dt>tax</dt><dd>' + esc(nz(rationale.tax)) + '</dd>' +
+          '<dt>mint/freeze</dt><dd>' + esc(nz(rationale.mintFreeze)) + '</dd>' +
+          '<dt>LP</dt><dd>' + esc(nz(rationale.lp)) + '</dd>' +
+          '<dt>top10</dt><dd>' + esc(nz(rationale.top10)) + '</dd>' +
+          '<dt>wash/rug</dt><dd>' + esc(nz(rationale.washRug)) + '</dd>' +
+        '</dl></div>' +
+      '</div>'
+    ) : '<div class="pos-detail"><div class="pos-detail-group" style="grid-column:1/-1;">' + esc(tr('posRationaleUnavail', 'Entry rationale unavailable — source payload has not recorded it yet.')) + '</div></div>';
+    var detail = '<tr class="pos-detail-row" id="' + rid + '" style="display:none;"><td colspan="18">' + detailBody + '</td></tr>';
+    return row + detail;
+  }
+
+  function renderPositions() {
+    var list = scopedPositions();
+    if (!list.length) {
+      var c = tableEmptyCopy();
+      els.tableBody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:var(--muted);padding:36px 10px;">' +
+        '<div style="font-family:var(--font-mono);font-size:11px;">' + esc(c.title) + '</div>' +
+        '<div class="small" style="margin-top:6px;">' + esc(c.why) + '</div></td></tr>';
+      return;
+    }
+    els.tableBody.innerHTML = list.map(renderPositionRow).join('');
+    bindExpandButtons();
+    bindCopyButtons(els.tableBody);
+  }
+
+  function renderOpenCards() {
+    var open = POSITIONS_DATA.positions.filter(function (p) { return p.state === 'open'; });
+    if (!open.length) {
+      els.cardGrid.innerHTML = '<div class="empty pos-card-empty" style="display:block;">' +
+        '<div class="e-why"><b>' + esc(tr('posCardEmptyT', '0 open positions')) + '</b></div>' +
+        '<div class="e-when">' + esc(tr('posCardEmptyW', 'No fills exist yet.')) + '</div></div>';
+      return;
+    }
+    els.cardGrid.innerHTML = open.map(function (p) {
+      return '<div class="pos-card">' +
+        '<div class="pos-card-top"><div><span class="pos-card-token">' + esc(nz(p.tokenSymbol)) + '</span><span class="pos-card-mint mono">' + esc(nz(p.mint)) + '</span></div>' +
+        '<span class="pill ' + (p.guardCls || 'ok') + '">' + esc(nz(p.guardStatus)) + '</span></div>' +
+        '<div class="pos-card-row"><span class="l">' + esc(tr('thEntryPrice', 'Entry price')) + ' / ' + esc(tr('thEntryMcap', 'mcap')) + '</span><span class="num">' + esc(nz(p.entryPrice)) + ' / ' + esc(nz(p.entryMcap)) + '</span></div>' +
+        '<div class="pos-card-row"><span class="l">' + esc(tr('thCurrentPrice', 'Current price')) + '</span><span class="num">' + esc(nz(p.currentPrice)) + '</span></div>' +
+        '<div class="pos-card-row"><span class="l">' + esc(tr('thUnrealized', 'Unrealized PnL %')) + '</span><span class="num">' + fmtSigned(p.unrealizedPct, '%') + '</span></div>' +
+        '<div class="pos-card-row"><span class="l">' + esc(tr('thStop', 'Stop')) + '</span><span class="num">' + esc(nz(p.stopDistance)) + '</span></div>' +
+        '<div class="pos-card-row"><span class="l">' + esc(tr('thTriggerWallet', 'Trigger wallet')) + '</span><span>' + esc(nz(p.triggerWallet && p.triggerWallet.alias)) + '</span></div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function renderArchives() {
+    var list = POSITIONS_DATA.archives;
+    if (!list.length) {
+      els.archBody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--muted);padding:26px 10px;">' +
+        '<div style="font-family:var(--font-mono);font-size:11px;">' + esc(tr('posArchEmptyT', '0 archived trades')) + '</div>' +
+        '<div class="small" style="margin-top:6px;">' + esc(tr('posArchEmptyW', 'exit_reason breakdown lands here once a paper trade closes.')) + '</div></td></tr>';
+      return;
+    }
+    els.archBody.innerHTML = list.map(function (a) {
+      var costsReady = a.gasFee != null && a.slippage != null && a.netPnlSol != null;
+      return '<tr>' +
+        '<td class="pos-token-td"><span class="pos-token-cell"><span class="pos-token-meta"><b>' + esc(nz(a.tokenSymbol)) + '</b><span class="addr mono small muted">' + esc(nz(a.mint)) + '</span></span></span></td>' +
+        '<td class="num">' + esc(nz(a.entryTsLabel)) + '</td>' +
+        '<td class="num">' + esc(nz(a.exitTsLabel)) + '</td>' +
+        '<td class="num">' + esc(nz(a.holdLabel)) + '</td>' +
+        '<td class="num">' + esc(nz(a.entryPrice)) + ' → ' + esc(nz(a.exitPrice)) + '</td>' +
+        '<td class="num">' + esc(nz(a.entryMcap)) + ' → ' + esc(nz(a.exitMcap)) + '</td>' +
+        '<td class="num">' + fmtSigned(a.grossPnlSol, ' SOL') + '</td>' +
+        '<td class="num">' + (costsReady ? esc(a.gasFee) : esc(tr('posCostPending', 'cost data pending'))) + '</td>' +
+        '<td class="num">' + (costsReady ? esc(a.slippage) : esc(tr('posCostPending', 'cost data pending'))) + '</td>' +
+        '<td class="num">' + (costsReady ? fmtSigned(a.netPnlSol, ' SOL') : esc(tr('posCostPending', 'cost data pending'))) + '</td>' +
+        '<td class="num">' + fmtSigned(a.roiPct, '%') + '</td>' +
+        '<td>' + esc(nz(a.exitReason)) + '</td>' +
+        '<td>' + esc(nz(a.rule && a.rule.name)) + '</td>' +
+        '<td>' + esc(nz(a.triggerWallet && a.triggerWallet.alias)) + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function renderSummary() {
+    var s = POSITIONS_DATA.summary;
+    els.statOpen.textContent = s.open;
+    els.statEntries.textContent = s.entries24h;
+    els.statParked.textContent = s.parked + s.blocked;
+    els.statPnl.textContent = (s.realizedNetPnlSol === null) ? '—' : fmtSigned(s.realizedNetPnlSol, ' SOL');
+    var noFills = tr('posNoFillsShort', 'No paper fills recorded yet.');
+    els.statOpenNote.textContent = s.open ? '' : noFills;
+    els.statEntriesNote.textContent = s.entries24h ? '' : noFills;
+    els.statParkedNote.textContent = (s.parked + s.blocked) ? '' : tr('posNoSignalsShort', 'No signals parked or blocked yet.');
+    els.statPnlNote.textContent = (s.realizedNetPnlSol === null) ? tr('posPnlUnavail', 'Not available — no closed trades yet.') : '';
+    var fresh = POSITIONS_DATA.fetchedAt ? tr('posFreshDefault', 'updated') : tr('posFreshDefault', 'No paper fills recorded yet · —');
+    if (els.freshness) els.freshness.textContent = fresh;
+    if (els.tableFreshness) els.tableFreshness.textContent = fresh;
+  }
+
+  function bindExpandButtons() {
+    Array.prototype.forEach.call(els.tableBody.querySelectorAll('.pos-expand-btn'), function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var id = btn.getAttribute('data-expand');
+        var row = document.getElementById(id);
+        if (!row) return;
+        var open = row.style.display !== 'none';
+        row.style.display = open ? 'none' : 'table-row';
+        btn.classList.toggle('open', !open);
+        btn.setAttribute('aria-expanded', String(!open));
+      });
+    });
+  }
+
+  function bindCopyButtons(scope) {
+    Array.prototype.forEach.call(scope.querySelectorAll('.copy-btn'), function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var addr = btn.getAttribute('data-copy');
+        if (addr && navigator.clipboard) {
+          navigator.clipboard.writeText(addr).then(function () {
+            btn.classList.add('copied');
+            setTimeout(function () { btn.classList.remove('copied'); }, 900);
+          });
+        }
+      });
+    });
+  }
+
+  function renderAll() {
+    renderSummary();
+    renderPositions();
+    renderOpenCards();
+    renderArchives();
+  }
+
+  if (els.scopeToggle) {
+    Array.prototype.forEach.call(els.scopeToggle.querySelectorAll('.scope-opt'), function (btn) {
+      btn.addEventListener('click', function () {
+        Array.prototype.forEach.call(els.scopeToggle.querySelectorAll('.scope-opt'), function (b) {
+          b.classList.remove('active'); b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+        posState.scope = btn.getAttribute('data-scope');
+        renderPositions();
+      });
+    });
+  }
+  if (els.filter) {
+    Array.prototype.forEach.call(els.filter.querySelectorAll('.pos-filter-opt'), function (btn) {
+      btn.addEventListener('click', function () {
+        Array.prototype.forEach.call(els.filter.querySelectorAll('.pos-filter-opt'), function (b) {
+          b.classList.remove('active'); b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active'); btn.setAttribute('aria-pressed', 'true');
+        posState.filter = btn.getAttribute('data-filter');
+        renderPositions();
+      });
+    });
+  }
+
+  renderAll();
+})();
+</script>
+
+<script>
+(function () {
+  var subScan = document.getElementById('sub-scan');
+  if (!subScan) return;
+
+  function t() { var dict = window.I18N || {}; return dict[window.savedLang] || dict.en || {}; }
+  function tr(key, fallback) { var d = t(); return d[key] || fallback; }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+  /* -----------------------------------------------------------------
+   * SAMPLE / MOCK DATA ONLY — everything in this block is a
+   * deterministically-seeded generator for the Scan History design
+   * mockup. Nothing here is fetched, live, or production-accurate;
+   * swap for a real scan-history endpoint later and keep field names.
+   * ------------------------------------------------------------- */
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var x = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var rnd = mulberry32(20240611);
+  function rr(min, max) { return min + rnd() * (max - min); }
+  function ri(min, max) { return Math.floor(rr(min, max + 1)); }
+  function pick(arr) { return arr[ri(0, arr.length - 1)]; }
+  var B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  function fakeAddr() { var s = ''; for (var i = 0; i < 32; i++) s += B58[ri(0, B58.length - 1)]; return s; }
+  function shortAddr(a) { return a.slice(0, 4) + '…' + a.slice(-4); }
+
+  var HANDLES = ['nightowl_sol', 'degen_kai', 'lp_hermit', 'basedchad', 'solqueen', 'ratioed', null, null, 'gm_wagmi', null, 'ape_index', null, 'quiet_alpha', null, 'wenmoon_dev', null];
+
+  var WALLET_COUNT = 42;
+  var now = Date.now();
+  now = now - (now % 3600000);
+
+  var SCAN_WALLETS = [];
+  for (var w = 0; w < WALLET_COUNT; w++) {
+    // wash_trader/bot is a stable per-wallet trait (a small minority), not an
+    // independent per-scan coin flip — a real wash-trading wallet keeps
+    // showing the same flag scan after scan, it doesn't intermittently clear it.
+    var badActor = w > 0 && w % 9 === 0; // ~4-5 of 42 wallets, deterministic
+    SCAN_WALLETS.push({ addr: fakeAddr(), handle: pick(HANDLES), skill: rr(0.35, 0.85), idx: w, badActor: badActor, badKind: rnd() < 0.5 ? 'bot' : 'wash_trader' });
+  }
+
+  // Run schedule: dense hourly for the last 24h (with 2 honest gap hours),
+  // thinning out for the 7d and 30d back-fill so the sample stays small
+  // while still making the 24h/7d/30d/all time filter show visibly
+  // different counts, as the brief requires.
+  var GAP_HOURS = [11, 19];
+  var SCAN_RUNS = [];
+  var ri_ = 0;
+  for (var h = 0; h < 24; h++) { SCAN_RUNS.push({ i: ri_++, ts: now - h * 3600000, gap: GAP_HOURS.indexOf(h) > -1 }); }
+  for (var h2 = 24; h2 < 168; h2 += 4) { SCAN_RUNS.push({ i: ri_++, ts: now - h2 * 3600000, gap: false }); }
+  for (var h3 = 168; h3 < 720; h3 += 12) { SCAN_RUNS.push({ i: ri_++, ts: now - h3 * 3600000, gap: false }); }
+  SCAN_RUNS.sort(function (a, b) { return a.i - b.i; }); // i already ascends with age; keep as generated (newest = i 0)
+
+  function rejectReasonFor(row) {
+    if (row.tags.indexOf('wash_trader') > -1 || row.tags.indexOf('bot') > -1) return 'wash_bot';
+    if (row.win7 < 0.60) return 'win7';
+    if (row.win30 < 0.50) return 'win30';
+    if (row.trades < 150) return 'trades';
+    if (row.holding >= 48) return 'holding';
+    return null;
+  }
+
+  var SCAN_ROWS = [];
+  SCAN_RUNS.forEach(function (run) {
+    if (run.gap) return; // no scan happened this hour — an honest gap, never backfilled
+    SCAN_WALLETS.forEach(function (wal) {
+      if (rnd() < 0.08) return; // leaderboard churn — not every wallet appears in every batch
+      var ageBoost = (run.i / SCAN_RUNS.length) * 0.1; // older runs (higher i) drift slightly lower on average
+      var skill = Math.max(0.05, Math.min(0.95, wal.skill - ageBoost + rr(-0.05, 0.05)));
+      var win7 = Math.max(0.1, Math.min(0.95, skill + rr(-0.12, 0.12)));
+      var win30 = Math.max(0.1, Math.min(0.9, skill + rr(-0.1, 0.06)));
+      var trades = Math.round(Math.max(4, skill * 340 + rr(-60, 60)));
+      var buys = Math.round(trades * rr(0.48, 0.56));
+      var sells = trades - buys;
+      var holding = Math.max(0.3, rr(1, 30) + (1 - skill) * rr(0, 90));
+      var vol7 = Math.round(trades * rr(0.4, 3.2) * 100) / 100;
+      var pnl7 = Math.round((skill - 0.45) * rr(20, 260) * 10) / 10;
+      var tags = [];
+      if (rnd() < 0.16) tags.push('kol');
+      if (rnd() < 0.10) tags.push('photon');
+      if (rnd() < 0.12) tags.push('top_followed');
+      if (wal.badActor) tags.push(wal.badKind); // consistently flagged, matching a real wash-trader/bot pattern
+      var row = { wallet: wal, addr: wal.addr, runI: run.i, scanTs: run.ts, win7: win7, win30: win30, trades: trades, buys: buys, sells: sells, holding: holding, vol7: vol7, pnl7: pnl7, tags: tags };
+      row.rejectReason = rejectReasonFor(row);
+      row.gate = row.rejectReason ? 'fail' : 'pass';
+      SCAN_ROWS.push(row);
+    });
+  });
+
+  /* ---------------------------- range helpers ---------------------------- */
+  function cutoffFor(range) {
+    if (range === '24h') return now - 24 * 3600000;
+    if (range === '7d') return now - 7 * 86400000;
+    if (range === '30d') return now - 30 * 86400000;
+    return 0;
+  }
+  function rowsInRange(range) { var c = cutoffFor(range); return SCAN_ROWS.filter(function (r) { return r.scanTs >= c; }); }
+  function runsInRange(range) { var c = cutoffFor(range); return SCAN_RUNS.filter(function (r) { return r.ts >= c; }); }
+  function currentRange() { var a = document.querySelector('#scanRangeToggle .scope-opt.active'); return a ? a.getAttribute('data-range') : '7d'; }
+  function fmtTs(ts) {
+    var diffH = Math.round((now - ts) / 3600000);
+    if (diffH < 1) return tr('scanJustNow', 'just now');
+    if (diffH < 24) return diffH + 'h ' + tr('scanAgo', 'ago');
+    return Math.round(diffH / 24) + 'd ' + tr('scanAgo', 'ago');
+  }
+  function reasonLabel(key) {
+    var map = {
+      wash_bot: tr('scanReasonWashBot', 'flagged wash_trader / bot'),
+      win7: tr('scanReasonWin7', 'win rate 7d too low'),
+      win30: tr('scanReasonWin30', 'win rate 30d too low'),
+      trades: tr('scanReasonTrades', 'too few trades'),
+      holding: tr('scanReasonHolding', 'holding too long')
+    };
+    return map[key] || key;
+  }
+
+  /* ---------------------------- aggregates ---------------------------- */
+  function computeFunnel(rows) {
+    var s0 = rows;
+    var s1 = s0.filter(function (r) { return r.tags.indexOf('wash_trader') === -1 && r.tags.indexOf('bot') === -1; });
+    var s2 = s1.filter(function (r) { return r.win7 >= 0.60; });
+    var s3 = s2.filter(function (r) { return r.win30 >= 0.50; });
+    var s4 = s3.filter(function (r) { return r.trades >= 150; });
+    var s5 = s4.filter(function (r) { return r.holding < 48; });
+    return [
+      { key: 'scanned', label: tr('scanStageScanned', 'Scanned'), n: s0.length },
+      { key: 'tagclean', label: tr('scanStageTag', 'Tag-clean'), n: s1.length },
+      { key: 'win7', label: tr('scanStageWin7', 'Win 7d ≥ 0.60'), n: s2.length },
+      { key: 'win30', label: tr('scanStageWin30', 'Win 30d ≥ 0.50'), n: s3.length },
+      { key: 'trades', label: tr('scanStageTrades', 'Trades ≥ 150'), n: s4.length },
+      { key: 'holding', label: tr('scanStageHolding', 'Holding < 48h'), n: s5.length },
+      { key: 'passed', label: tr('scanStagePassed', 'Passed'), n: s5.length }
+    ];
+  }
+  function computeRejectReasons(rows) {
+    var counts = { wash_bot: 0, win7: 0, win30: 0, trades: 0, holding: 0 };
+    rows.forEach(function (r) { if (r.rejectReason) counts[r.rejectReason]++; });
+    return Object.keys(counts).map(function (k) { return { key: k, label: reasonLabel(k), n: counts[k] }; }).sort(function (a, b) { return b.n - a.n; });
+  }
+  function computeRunSeries(range) {
+    var runs = runsInRange(range);
+    var ranged = rowsInRange(range);
+    return runs.map(function (run) {
+      var rowsForRun = ranged.filter(function (r) { return r.runI === run.i; });
+      return { i: run.i, ts: run.ts, gap: run.gap, scanned: rowsForRun.length, passed: rowsForRun.filter(function (r) { return r.gate === 'pass'; }).length, rows: rowsForRun };
+    }).sort(function (a, b) { return b.i - a.i; }); // oldest (highest i) -> newest, left to right
+  }
+
+  /* ---------------------------- renderers ---------------------------- */
+  function renderSummary(range) {
+    var rows = rowsInRange(range);
+    var runs = runsInRange(range).filter(function (r) { return !r.gap; });
+    var uniqueWallets = {};
+    rows.forEach(function (r) { uniqueWallets[r.addr] = true; });
+    var latestRun = runs.length ? runs.reduce(function (a, b) { return a.i < b.i ? a : b; }) : null;
+    var latestRows = latestRun ? SCAN_ROWS.filter(function (r) { return r.runI === latestRun.i; }) : [];
+    var latestPassed = latestRows.filter(function (r) { return r.gate === 'pass'; }).length;
+    var byWallet = {};
+    rows.forEach(function (r) { if (!byWallet[r.addr] || r.runI < byWallet[r.addr].runI) byWallet[r.addr] = r; });
+    var tracked = 0;
+    Object.keys(byWallet).forEach(function (a) { if (byWallet[a].gate === 'pass') tracked++; });
+    var flagged = {};
+    rows.forEach(function (r) { if (r.tags.indexOf('wash_trader') > -1 || r.tags.indexOf('bot') > -1) flagged[r.addr] = true; });
+
+    document.getElementById('scanStatScans').textContent = runs.length;
+    document.getElementById('scanStatWallets').textContent = Object.keys(uniqueWallets).length;
+    document.getElementById('scanStatLatest').textContent = latestRun ? (latestRows.length + ' / ' + latestPassed) : '—';
+    document.getElementById('scanStatLatestNote').textContent = latestRun ? fmtTs(latestRun.ts) : tr('scanNoRuns', 'no scans in this range');
+    document.getElementById('scanStatTracked').textContent = tracked;
+    document.getElementById('scanStatFlagged').textContent = Object.keys(flagged).length;
+    var scansNote = rows.length ? '' : tr('scanNoRuns', 'no scans in this range');
+    document.getElementById('scanStatScansNote').textContent = scansNote;
+    document.getElementById('scanStatWalletsNote').textContent = scansNote;
+    document.getElementById('scanStatTrackedNote').textContent = '';
+    document.getElementById('scanStatFlaggedNote').textContent = '';
+  }
+
+  function renderRunChart(range) {
+    var series = computeRunSeries(range);
+    var svg = document.getElementById('scanRunChart');
+    var W = 960, H = 220, padL = 30, padR = 8, padT = 14, padB = 8;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    if (!series.length) {
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      svg.innerHTML = '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" font-family="monospace" font-size="11" fill="var(--muted)">' + esc(tr('scanNoRuns', 'no scans in this range')) + '</text>';
+      document.getElementById('scanChartLegend').innerHTML = '';
+      return;
+    }
+    var maxY = 1;
+    series.forEach(function (s) { maxY = Math.max(maxY, s.scanned); });
+    maxY = Math.max(5, Math.ceil(maxY * 1.15 / 5) * 5);
+    function xPos(i) { return series.length === 1 ? padL + plotW / 2 : padL + i / (series.length - 1) * plotW; }
+    function yPos(v) { return padT + plotH - (v / maxY) * plotH; }
+    function buildSegs(field) {
+      var segs = [], cur = [];
+      series.forEach(function (s, i) {
+        if (s.gap) { if (cur.length) { segs.push(cur); cur = []; } return; }
+        cur.push([xPos(i), yPos(s[field]), i]);
+      });
+      if (cur.length) segs.push(cur);
+      return segs;
+    }
+    function pathD(pts) { return pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' '); }
+    var scannedSegs = buildSegs('scanned');
+    var passedSegs = buildSegs('passed');
+    var parts = [];
+    for (var gy = 0; gy <= 4; gy++) {
+      var yy = padT + plotH * gy / 4;
+      parts.push('<line x1="' + padL + '" y1="' + yy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + yy.toFixed(1) + '" stroke="var(--border)" stroke-width="1" opacity="0.5"/>');
+      parts.push('<text x="' + (padL - 6) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end" font-family="monospace" font-size="9" fill="var(--muted)">' + Math.round(maxY * (4 - gy) / 4) + '</text>');
+    }
+    passedSegs.forEach(function (seg) {
+      if (seg.length < 2) return;
+      var base = yPos(0);
+      var d = pathD(seg) + ' L' + seg[seg.length - 1][0].toFixed(1) + ' ' + base.toFixed(1) + ' L' + seg[0][0].toFixed(1) + ' ' + base.toFixed(1) + ' Z';
+      parts.push('<path d="' + d + '" fill="var(--accent)" opacity="0.12" stroke="none"/>');
+    });
+    scannedSegs.forEach(function (seg) { parts.push('<path d="' + pathD(seg) + '" fill="none" stroke="var(--fg-mut)" stroke-width="2"/>'); });
+    passedSegs.forEach(function (seg) { parts.push('<path d="' + pathD(seg) + '" fill="none" stroke="var(--accent)" stroke-width="2"/>'); });
+    series.forEach(function (s, i) {
+      if (s.gap) parts.push('<line x1="' + xPos(i).toFixed(1) + '" y1="' + padT + '" x2="' + xPos(i).toFixed(1) + '" y2="' + (padT + plotH) + '" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="3 3"/>');
+    });
+    var hitW = Math.max(4, plotW / series.length);
+    series.forEach(function (s, i) { parts.push('<rect data-i="' + i + '" x="' + (xPos(i) - hitW / 2).toFixed(1) + '" y="' + padT + '" width="' + hitW.toFixed(1) + '" height="' + plotH + '" fill="transparent"/>'); });
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.innerHTML = parts.join('');
+    document.getElementById('scanChartLegend').innerHTML =
+      '<span class="li"><span class="sw scanned"></span>' + esc(tr('scanLegendScanned', 'scanned')) + '</span>' +
+      '<span class="li"><span class="sw passed"></span>' + esc(tr('scanLegendPassed', 'passed')) + '</span>';
+    var tip = document.getElementById('scanChartTip');
+    Array.prototype.forEach.call(svg.querySelectorAll('rect[data-i]'), function (hit) {
+      hit.addEventListener('mouseenter', function () {
+        var i = +hit.getAttribute('data-i');
+        var s = series[i];
+        var svgRect = svg.getBoundingClientRect();
+        var scale = svgRect.width / W;
+        tip.style.left = (xPos(i) * scale) + 'px';
+        tip.style.top = '4px';
+        if (s.gap) {
+          tip.innerHTML = '<div class="stt">' + fmtTs(s.ts) + '</div><div>' + esc(tr('scanNoRunTip', 'no scan this hour')) + '</div>';
+        } else {
+          var reasons = computeRejectReasons(s.rows).filter(function (rr) { return rr.n > 0; }).slice(0, 2);
+          tip.innerHTML = '<div class="stt">' + fmtTs(s.ts) + '</div>' +
+            '<div><b>' + s.scanned + '</b> ' + esc(tr('scanLegendScanned', 'scanned')) + ' · <b>' + s.passed + '</b> ' + esc(tr('scanLegendPassed', 'passed')) + ' · <span class="str">' + (s.scanned - s.passed) + ' ' + esc(tr('scanFail', 'fail')) + '</span></div>' +
+            (reasons.length ? '<div class="stt" style="margin-top:4px;">' + reasons.map(function (r) { return esc(r.label) + ' (' + r.n + ')'; }).join(' · ') + '</div>' : '');
+        }
+        tip.hidden = false;
+      });
+      hit.addEventListener('mouseleave', function () { tip.hidden = true; });
+    });
+  }
+
+  function renderFunnel(range) {
+    var stages = computeFunnel(rowsInRange(range));
+    var max = stages[0].n || 1;
+    var nodesHtml = stages.map(function (st, i) {
+      var pct = max ? Math.round(st.n / max * 100) : 0;
+      var isLast = i === stages.length - 1;
+      return '<div class="pipe-node" data-stage="' + st.key + '">' +
+        '<div class="pipe-card" tabindex="0">' +
+        '<div class="pipe-card-top"><div class="pipe-title-wrap"><div class="pipe-label">' + esc(st.label) + '</div><div class="pipe-meta">' + pct + '%</div></div></div>' +
+        '<div class="pipe-card-bottom"><span class="pipe-count num" style="' + (isLast ? 'color:var(--st-ok);' : '') + '">' + st.n + '</span><span class="pipe-port"></span></div>' +
+        '</div></div>';
+    });
+    var connHtml = [];
+    for (var i = 0; i < stages.length - 1; i++) {
+      var drop = stages[i].n - stages[i + 1].n;
+      connHtml.push('<div class="pipe-connector-wrap"><div class="pipe-connector"><span class="dot"></span></div><span class="pipe-edge-label">' + (drop > 0 ? '−' + drop : '0') + '</span></div>');
+    }
+    // Two rows (4 + 3 stages) instead of one wide row of 7 — fits the panel at
+    // a readable node size with no horizontal scroll, mirroring the same
+    // two-row funnel convention already used on the Pipeline view.
+    var SPLIT = 4;
+    function buildRow(nodes, conns) {
+      var r = '';
+      for (var k = 0; k < nodes.length; k++) { r += nodes[k]; if (k < conns.length) r += conns[k]; }
+      return '<div class="pipe-row">' + r + '</div>';
+    }
+    var row1 = buildRow(nodesHtml.slice(0, SPLIT), connHtml.slice(0, SPLIT - 1));
+    var row2 = buildRow(nodesHtml.slice(SPLIT), connHtml.slice(SPLIT));
+    var betweenDrop = stages[SPLIT - 1].n - stages[SPLIT].n;
+    var rowConnector = '<div class="pipe-row-connector"><div class="pipe-connector"><span class="dot"></span></div><span class="pipe-edge-label">' + (betweenDrop > 0 ? '−' + betweenDrop : '0') + '</span></div>';
+    document.getElementById('scanFunnelFlow').innerHTML = row1 + rowConnector + row2;
+  }
+
+  function renderRejectBars(range) {
+    var rows = rowsInRange(range).filter(function (r) { return r.gate === 'fail'; });
+    var el = document.getElementById('scanRejectBars');
+    if (!rows.length) { el.innerHTML = '<div class="small muted">' + esc(tr('scanNoRuns', 'no scans in this range')) + '</div>'; return; }
+    var reasons = computeRejectReasons(rows);
+    var max = reasons[0] ? reasons[0].n : 1;
+    el.innerHTML = reasons.map(function (rr) {
+      var pct = max ? Math.max(2, Math.round(rr.n / max * 100)) : 0;
+      return '<div class="dbrow"><span class="dbl">' + esc(rr.label) + '</span><div class="dbtr"><i style="width:' + pct + '%"></i></div><span class="dbn">' + rr.n + '</span></div>';
+    }).join('');
+  }
+
+  var ledgerState = { sort: 'scanTs', dir: 'desc', gate: 'all', q: '', page: 1, pageSize: 20 };
+  function ledgerRows(range) {
+    var rows = rowsInRange(range);
+    if (ledgerState.gate !== 'all') rows = rows.filter(function (r) { return r.gate === ledgerState.gate; });
+    if (ledgerState.q) {
+      var q = ledgerState.q.toLowerCase();
+      rows = rows.filter(function (r) { return r.addr.toLowerCase().indexOf(q) > -1 || (r.wallet.handle || '').toLowerCase().indexOf(q) > -1; });
+    }
+    var dir = ledgerState.dir === 'asc' ? 1 : -1;
+    var key = ledgerState.sort;
+    return rows.slice().sort(function (a, b) {
+      var av = key === 'wallet' ? a.addr : a[key];
+      var bv = key === 'wallet' ? b.addr : b[key];
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }
+  function renderLedgerRow(r) {
+    var idLine = r.wallet.handle ? '<b>' + esc(r.wallet.handle) + '</b>' : '<span class="addr mono small">' + esc(shortAddr(r.addr)) + '</span>';
+    var subLine = r.wallet.handle ? '<span class="addr mono small muted">' + esc(shortAddr(r.addr)) + '</span>' : '';
+    var tagsHtml = r.tags.length ? r.tags.map(function (tg) {
+      var struck = (tg === 'wash_trader' || tg === 'bot');
+      return '<span class="pill locked"' + (struck ? ' style="text-decoration:line-through;"' : '') + '>' + esc(tg) + '</span>';
+    }).join(' ') : '<span class="small muted">—</span>';
+    return '<tr class="row-click" data-addr="' + esc(r.addr) + '">' +
+      '<td class="pos-token-td"><span class="pos-token-cell"><span class="wm-chip">' + esc(r.addr.slice(0, 2)) + '</span><span class="pos-token-meta">' + idLine + subLine + '</span>' +
+      '<button type="button" class="btn-icon copy-btn" data-copy="' + esc(r.addr) + '" title="' + esc(tr('tCopyAddr', 'Copy address')) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></span></td>' +
+      '<td class="num">' + fmtTs(r.scanTs) + '</td>' +
+      '<td class="num">' + (r.win7 * 100).toFixed(0) + '%</td>' +
+      '<td class="num">' + (r.win30 * 100).toFixed(0) + '%</td>' +
+      '<td class="num">' + r.buys + '/' + r.sells + '</td>' +
+      '<td class="num">' + r.holding.toFixed(1) + '</td>' +
+      '<td class="num">' + r.vol7.toFixed(1) + ' SOL</td>' +
+      '<td class="num ' + (r.pnl7 >= 0 ? 'pnl-pos' : 'pnl-neg') + '">' + (r.pnl7 >= 0 ? '+' : '') + r.pnl7.toFixed(1) + '</td>' +
+      '<td>' + tagsHtml + '</td>' +
+      '<td><span class="pill ' + (r.gate === 'pass' ? 'ok' : 'fail') + '">' + r.gate + '</span></td>' +
+      '<td>' + (r.rejectReason ? '<span class="small muted">' + esc(reasonLabel(r.rejectReason)) + '</span>' : '—') + '</td>' +
+      '</tr>';
+  }
+  function renderLedger(range) {
+    var all = ledgerRows(range);
+    var totalPages = Math.max(1, Math.ceil(all.length / ledgerState.pageSize));
+    if (ledgerState.page > totalPages) ledgerState.page = totalPages;
+    var start = (ledgerState.page - 1) * ledgerState.pageSize;
+    var pageRows = all.slice(start, start + ledgerState.pageSize);
+    var body = document.getElementById('scanTableBody');
+    if (!pageRows.length) {
+      body.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:30px 10px;"><div style="font-family:monospace;font-size:11px;">' + esc(tr('scanLedgerEmptyT', 'No scans match this view')) + '</div><div class="small" style="margin-top:6px;">' + esc(tr('scanLedgerEmptyW', 'Try widening the time range or clearing filters.')) + '</div></td></tr>';
+    } else {
+      body.innerHTML = pageRows.map(renderLedgerRow).join('');
+      bindCopyButtons(body);
+      Array.prototype.forEach.call(body.querySelectorAll('.row-click'), function (trEl) {
+        trEl.addEventListener('click', function () { openDrawer(trEl.getAttribute('data-addr')); });
+      });
+    }
+    document.getElementById('scanPagerLabel').textContent = ledgerState.page + ' / ' + totalPages;
+    document.getElementById('scanPagerPrev').disabled = ledgerState.page <= 1;
+    document.getElementById('scanPagerNext').disabled = ledgerState.page >= totalPages;
+    Array.prototype.forEach.call(document.querySelectorAll('#scanTable th[data-sort]'), function (th) {
+      var key = th.getAttribute('data-sort');
+      th.classList.toggle('sort-active', key === ledgerState.sort);
+      var labelSpan = th.querySelector('span');
+      var arrow = th.querySelector('.sort-arrow');
+      if (!arrow) { arrow = document.createElement('span'); arrow.className = 'sort-arrow'; labelSpan.appendChild(arrow); }
+      arrow.textContent = key === ledgerState.sort ? (ledgerState.dir === 'asc' ? '▲' : '▼') : '▲';
+    });
+  }
+
+  var SENS_THRESHOLDS = [0.55, 0.60, 0.65, 0.70];
+  function renderSensitivity(range) {
+    var rows = rowsInRange(range);
+    var basePool = rows.filter(function (r) { return r.tags.indexOf('wash_trader') === -1 && r.tags.indexOf('bot') === -1 && r.win30 >= 0.50 && r.trades >= 150 && r.holding < 48; });
+    document.getElementById('scanSensToggle').innerHTML = SENS_THRESHOLDS.map(function (th) {
+      return '<span class="pos-filter-opt' + (th === 0.60 ? ' active' : '') + '" style="cursor:default;">' + th.toFixed(2) + '</span>';
+    }).join('');
+    document.getElementById('scanSensResult').innerHTML = SENS_THRESHOLDS.map(function (th) {
+      var n = basePool.filter(function (r) { return r.win7 >= th; }).length;
+      return '<div class="scan-sens-row' + (th === 0.60 ? ' current' : '') + '"><span>' + esc(tr('scanSensLabel', 'win rate 7d ≥')) + ' ' + th.toFixed(2) + (th === 0.60 ? ' · ' + esc(tr('scanSensCurrent', 'current')) : '') + '</span><span class="n">' + n + ' ' + esc(tr('scanSensWouldPass', 'would pass')) + '</span></div>';
+    }).join('');
+  }
+
+  function histogram(values, bins, min, max, fmt) {
+    var w = 260, h = 100, padB = 16;
+    var counts = new Array(bins).fill(0);
+    values.forEach(function (v) { var idx = Math.min(bins - 1, Math.max(0, Math.floor((v - min) / (max - min) * bins))); counts[idx]++; });
+    var maxC = Math.max.apply(null, counts) || 1;
+    var barW = w / bins;
+    var bars = counts.map(function (c, i) {
+      var bh = (c / maxC) * (h - padB);
+      var x = i * barW + 1, y = h - padB - bh;
+      return '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + Math.max(1, barW - 2).toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2" fill="var(--accent)" opacity="0.6"/>';
+    }).join('');
+    var axis = '<line x1="0" y1="' + (h - padB) + '" x2="' + w + '" y2="' + (h - padB) + '" stroke="var(--border)"/>' +
+      '<text x="0" y="' + h + '" font-family="monospace" font-size="8" fill="var(--muted)">' + fmt(min) + '</text>' +
+      '<text x="' + w + '" y="' + h + '" text-anchor="end" font-family="monospace" font-size="8" fill="var(--muted)">' + fmt(max) + '</text>';
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '">' + bars + axis + '</svg>';
+  }
+  function renderHistograms(range) {
+    var rows = rowsInRange(range);
+    var grid = document.getElementById('scanHistGrid');
+    if (!rows.length) { grid.innerHTML = '<div class="small muted">' + esc(tr('scanNoRuns', 'no scans in this range')) + '</div>'; return; }
+    grid.innerHTML =
+      '<div class="scan-hist"><h4>' + esc(tr('scanHistWin', 'Win rate 7d')) + '</h4>' + histogram(rows.map(function (r) { return r.win7; }), 10, 0, 1, function (v) { return Math.round(v * 100) + '%'; }) + '</div>' +
+      '<div class="scan-hist"><h4>' + esc(tr('scanHistTrades', 'Trades')) + '</h4>' + histogram(rows.map(function (r) { return r.trades; }), 10, 0, 400, function (v) { return Math.round(v); }) + '</div>' +
+      '<div class="scan-hist"><h4>' + esc(tr('scanHistHolding', 'Holding (h)')) + '</h4>' + histogram(rows.map(function (r) { return r.holding; }), 10, 0, 120, function (v) { return Math.round(v) + 'h'; }) + '</div>';
+  }
+
+  var DIST_LABELS = [['>5x', 'bucket-pos'], ['2–5x', 'bucket-pos2'], ['<2x', 'bucket-mid'], ['-0.5–0x', 'bucket-neg2'], ['<-0.5x', 'bucket-neg']];
+  function distForWallet(hist) {
+    var latest = hist[hist.length - 1];
+    var skill = latest.win7;
+    var lr = mulberry32(9000 + latest.wallet.idx);
+    var raw = [Math.round(skill * 22 + lr() * 4), Math.round(skill * 30 + lr() * 6), Math.round(18 + lr() * 10), Math.round((1 - skill) * 20 + lr() * 4), Math.round((1 - skill) * 16 + lr() * 4)];
+    var max = Math.max.apply(null, raw) || 1;
+    return raw.map(function (v, i) {
+      var pct = Math.max(4, Math.round(v / max * 100));
+      return '<div class="drow"><span class="dbucket">' + DIST_LABELS[i][0] + '</span><div class="dtrack"><i class="' + DIST_LABELS[i][1] + '" style="width:' + pct + '%"></i></div><span class="dval">' + v + '</span></div>';
+    }).join('');
+  }
+  function sparkline(values) {
+    var w = 160, h = 28;
+    var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+    if (max === min) max = min + 1;
+    var pts = values.map(function (v, i) {
+      var x = values.length === 1 ? 0 : i / (values.length - 1) * w;
+      var y = h - ((v - min) / (max - min)) * (h - 4) - 2;
+      return x.toFixed(1) + ' ' + y.toFixed(1);
+    });
+    var d = 'M' + pts.join(' L');
+    var last = pts[pts.length - 1].split(' ');
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '"><path d="' + d + '" fill="none" stroke="var(--accent)" stroke-width="1.6"/><circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.2" fill="var(--accent)"/></svg>';
+  }
+  function walletHistory(addr) { return SCAN_ROWS.filter(function (r) { return r.addr === addr; }).sort(function (a, b) { return b.runI - a.runI; }); }
+  function deltaHtml(a, b, fmt, higherIsBetter) {
+    var d = b - a;
+    var cls = d === 0 ? '' : ((d > 0) === (higherIsBetter !== false) ? 'pnl-pos' : 'pnl-neg');
+    var arrow = d === 0 ? '·' : (d > 0 ? '▲' : '▼');
+    return '<span class="d ' + cls + '">' + arrow + ' ' + fmt(Math.abs(d)) + '</span>';
+  }
+  function openDrawer(addr) {
+    var hist = walletHistory(addr); // oldest -> newest via runI descending sort reversed below
+    if (!hist.length) return;
+    hist = hist.slice().reverse(); // now oldest first, newest last
+    var wal = hist[0].wallet;
+    var first = hist[0], latest = hist[hist.length - 1];
+    document.getElementById('scanDrawerTitle').textContent = wal.handle || shortAddr(addr);
+    document.getElementById('scanDrawerAddr').textContent = shortAddr(addr);
+    var body =
+      '<div><h4>' + esc(tr('scanDrawerSeries', 'Metrics across scans')) + '</h4>' +
+      '<div class="scan-spark-row"><span class="l">' + esc(tr('thWin7', 'Win 7d')) + '</span>' + sparkline(hist.map(function (r) { return r.win7; })) + '<span class="v">' + (latest.win7 * 100).toFixed(0) + '%</span></div>' +
+      '<div class="scan-spark-row"><span class="l">' + esc(tr('thWin30', 'Win 30d')) + '</span>' + sparkline(hist.map(function (r) { return r.win30; })) + '<span class="v">' + (latest.win30 * 100).toFixed(0) + '%</span></div>' +
+      '<div class="scan-spark-row"><span class="l">' + esc(tr('thTradesBS', 'Trades')) + '</span>' + sparkline(hist.map(function (r) { return r.trades; })) + '<span class="v">' + latest.trades + '</span></div>' +
+      '<div class="scan-spark-row"><span class="l">' + esc(tr('thPnl7', 'PnL 7d')) + '</span>' + sparkline(hist.map(function (r) { return r.pnl7; })) + '<span class="v">' + (latest.pnl7 >= 0 ? '+' : '') + latest.pnl7.toFixed(1) + '</span></div></div>' +
+      '<div><h4>' + esc(tr('scanDrawerDelta', 'Latest vs. first seen')) + '</h4>' +
+      '<div class="scan-delta-row"><span class="l">' + esc(tr('thWin7', 'Win 7d')) + '</span>' + deltaHtml(first.win7, latest.win7, function (v) { return (v * 100).toFixed(0) + 'pp'; }) + '</div>' +
+      '<div class="scan-delta-row"><span class="l">' + esc(tr('thTradesBS', 'Trades')) + '</span>' + deltaHtml(first.trades, latest.trades, function (v) { return Math.round(v); }) + '</div>' +
+      '<div class="scan-delta-row"><span class="l">' + esc(tr('thHolding', 'Holding h')) + '</span>' + deltaHtml(first.holding, latest.holding, function (v) { return v.toFixed(1); }, false) + '</div></div>' +
+      '<div><h4>' + esc(tr('scanDrawerGateHist', 'Gate history')) + '</h4><div class="scan-gate-strip">' + hist.map(function (r) { return '<span class="scan-gate-dot ' + r.gate + '" title="' + fmtTs(r.scanTs) + ' · ' + r.gate + '"></span>'; }).join('') + '</div></div>' +
+      '<div><h4>' + esc(tr('hPnlDist', 'PnL distribution — 5x buckets, sample shape')) + '</h4><div class="dist">' + distForWallet(hist) + '</div></div>' +
+      '<p class="small muted" style="margin-top:-6px;">' + esc(tr('scanDrawerNote', 'All values on this drawer are sample data for design purposes.')) + '</p>';
+    document.getElementById('scanDrawerBody').innerHTML = body;
+    bindCopyButtons(document.getElementById('scanDrawerBody'));
+    var scrim = document.getElementById('scanDrawerScrim'), drawer = document.getElementById('scanDrawer');
+    scrim.hidden = false; drawer.hidden = false;
+    requestAnimationFrame(function () { scrim.classList.add('open'); drawer.classList.add('open'); });
+    document.getElementById('scanDrawerClose').focus();
+  }
+  function closeDrawer() {
+    var scrim = document.getElementById('scanDrawerScrim'), drawer = document.getElementById('scanDrawer');
+    scrim.classList.remove('open'); drawer.classList.remove('open');
+    setTimeout(function () { scrim.hidden = true; drawer.hidden = true; }, 220);
+  }
+
+  function bindCopyButtons(scope) {
+    Array.prototype.forEach.call(scope.querySelectorAll('.copy-btn'), function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var addr = btn.getAttribute('data-copy');
+        if (addr && navigator.clipboard) {
+          navigator.clipboard.writeText(addr).then(function () { btn.classList.add('copied'); setTimeout(function () { btn.classList.remove('copied'); }, 900); });
+        }
+      });
+    });
+  }
+
+  function renderAll() {
+    var range = currentRange();
+    renderSummary(range);
+    renderRunChart(range);
+    renderFunnel(range);
+    renderRejectBars(range);
+    renderLedger(range);
+    renderSensitivity(range);
+    renderHistograms(range);
+  }
+
+  var rangeToggle = document.getElementById('scanRangeToggle');
+  if (rangeToggle) Array.prototype.forEach.call(rangeToggle.querySelectorAll('.scope-opt'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(rangeToggle.querySelectorAll('.scope-opt'), function (b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      ledgerState.page = 1;
+      renderAll();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#scanTable th[data-sort]'), function (th) {
+    th.setAttribute('tabindex', '0');
+    th.addEventListener('click', function () {
+      var key = th.getAttribute('data-sort');
+      if (ledgerState.sort === key) ledgerState.dir = ledgerState.dir === 'asc' ? 'desc' : 'asc';
+      else { ledgerState.sort = key; ledgerState.dir = key === 'wallet' ? 'asc' : 'desc'; }
+      renderLedger(currentRange());
+    });
+    th.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); th.click(); } });
+  });
+  var gateFilter = document.getElementById('scanGateFilter');
+  if (gateFilter) Array.prototype.forEach.call(gateFilter.querySelectorAll('.pos-filter-opt'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(gateFilter.querySelectorAll('.pos-filter-opt'), function (b) { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-pressed', 'true');
+      ledgerState.gate = btn.getAttribute('data-gate');
+      ledgerState.page = 1;
+      renderLedger(currentRange());
+    });
+  });
+  var scanSearch = document.getElementById('scanSearch');
+  if (scanSearch) scanSearch.addEventListener('input', function () { ledgerState.q = scanSearch.value; ledgerState.page = 1; renderLedger(currentRange()); });
+  var pagerPrev = document.getElementById('scanPagerPrev'), pagerNext = document.getElementById('scanPagerNext');
+  if (pagerPrev) pagerPrev.addEventListener('click', function () { if (ledgerState.page > 1) { ledgerState.page--; renderLedger(currentRange()); } });
+  if (pagerNext) pagerNext.addEventListener('click', function () { ledgerState.page++; renderLedger(currentRange()); });
+  var drawerClose = document.getElementById('scanDrawerClose'), drawerScrim = document.getElementById('scanDrawerScrim');
+  if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+  if (drawerScrim) drawerScrim.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) {
+    var drawer = document.getElementById('scanDrawer');
+    if (e.key === 'Escape' && drawer && !drawer.hidden) closeDrawer();
+  });
+
+  renderAll();
+})();
+</script>
 
 </body></html>

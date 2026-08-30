@@ -45,10 +45,8 @@ export function LanguageLayer({ open, lang, onChangeLang, onClose }: {
             onKeyDown={(e) => { if (e.key === "Enter") { onChangeLang(l.code); onClose(); } }}
           >
             <span className="lo-code">{CODE_MAP[l.code]}</span>
-            <span>
-              <span className="lo-name">{t(l.key)}</span>
-              <div className="lo-desc">{DESC_MAP[l.code]}</div>
-            </span>
+            <span className="lo-name">{t(l.key)}</span>
+            <span className="lo-desc">{DESC_MAP[l.code]}</span>
             <span className="lo-check"><IconCheck /></span>
           </div>
         ))}

@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useDashboard } from "@/lib/dashboard-context";
+import type { WalletsPayload, LiveWallet } from "@/lib/types";
+import { ScanHistory } from "./ScanHistory";
+
+const POLL_MS = 30_000;
 
 interface Wallet {
   alias: string;
@@ -74,12 +78,78 @@ function winColor(n: number) {
   return n >= 55 ? "pnl-pos" : n >= 50 ? "delta-flat" : "pnl-neg";
 }
 
+function shortAddr(address: string): string {
+  return address.length > 8 ? `${address.slice(0, 4)}…${address.slice(-4)}` : address;
+}
+
+function ago(ts: number | null): string {
+  if (!ts) return "—";
+  const diff = Math.max(0, Math.floor(Date.now() / 1000) - ts);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function toWallet(lw: LiveWallet): Wallet {
+  const alias = lw.nickname || lw.twitter || shortAddr(lw.address);
+  const flagged = lw.tags.some((tag) => tag === "bot" || tag === "wash_trader");
+  const state: Wallet["state"] = flagged ? "discarded" : lw.isSmartMoney ? "watched" : "candidate";
+  const pnl = lw.realizedProfit7d;
+  const pnlStr = pnl > 0 ? `+${pnl.toFixed(1)}` : pnl < 0 ? pnl.toFixed(1) : "0.0";
+  const win = lw.winrate7d * 100;
+  return {
+    alias,
+    addr: lw.address,
+    short: shortAddr(lw.address),
+    state,
+    tags: lw.tags,
+    gmgnPnl: pnlStr,
+    fifo: "—",
+    trades: lw.txs7d,
+    win: `${win.toFixed(1)}%`,
+    winN: lw.txs7d,
+    score: Math.round(win),
+    last: ago(lw.lastActiveTs),
+    first: "—",
+    dist: lw.dist,
+    signals: [],
+    vetoNote: "GMGN provider data — signal history not tracked for this wallet.",
+  };
+}
+
 export function SmartWallets() {
   const { t } = useDashboard();
-  const [tab, setTab] = useState<"roster" | "detail">("roster");
+  const [tab, setTab] = useState<"roster" | "detail" | "scan">("roster");
   const [filter, setFilter] = useState("");
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
   const [wallets, setWallets] = useState<Wallet[]>(WALLETS);
+  const [payload, setPayload] = useState<WalletsPayload | null>(null);
+  const [copiedAddr, setCopiedAddr] = useState<string | null>(null);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const response = await fetch("/api/wallets", { cache: "no-store" });
+        const data = (await response.json()) as WalletsPayload;
+        if (cancelled) return;
+        if (data.ok && data.wallets.length) {
+          setWallets(data.wallets.map(toWallet));
+        }
+        setPayload(data);
+      } catch {
+        if (cancelled) return;
+      }
+    }
+    load();
+    const interval = setInterval(load, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   const filteredWallets = useMemo(() => {
     const q = filter.toLowerCase();
@@ -104,16 +174,45 @@ export function SmartWallets() {
     setTab("detail");
   };
 
-  const copyAddr = async (addr: string) => {
-    try { await navigator.clipboard.writeText(addr); } catch {}
+  const copyAddr = async (event: React.MouseEvent<HTMLButtonElement>, addr: string) => {
+    const button = event.currentTarget;
+    const fallback = () => {
+      const textarea = document.createElement("textarea");
+      textarea.value = addr;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch { ok = false; }
+      document.body.removeChild(textarea);
+      return ok;
+    };
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(addr);
+      copied = true;
+    } catch {
+      copied = fallback();
+    }
+    if (copied) {
+      button.classList.add("copied");
+      setCopiedAddr(addr);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => {
+        setCopiedAddr(null);
+        button.classList.remove("copied");
+      }, 900);
+    }
   };
 
   return (
     <div>
       <div className="toolbar" style={{ marginBottom: 14 }}>
-        <div className="tabs" role="tablist">
-          <button className={tab === "roster" ? "active" : ""} onClick={() => setTab("roster")}>Roster</button>
-          <button className={tab === "detail" ? "active" : ""} onClick={() => setTab("detail")}>Wallet detail</button>
+        <div className="tabs" role="tablist" id="walletTabs">
+          <button className={tab === "roster" ? "active" : ""} onClick={() => setTab("roster")}>{t("tabRoster")}</button>
+          <button className={tab === "detail" ? "active" : ""} onClick={() => setTab("detail")}>{t("tabWalletDetail")}</button>
+          <button className={tab === "scan" ? "active" : ""} onClick={() => setTab("scan")}>{t("tabScanHistory")}</button>
         </div>
         <span style={{ flex: 1 }} />
         <input
@@ -139,22 +238,21 @@ export function SmartWallets() {
             <table className="dtable">
               <thead>
                 <tr>
-                  <th style={{ width: 40 }}>{t("thWatch")}</th>
-                  <th>{t("thWallet")}</th>
-                  <th>{t("thState")}</th>
-                  <th>{t("thTags")}</th>
-                  <th className="num"><span>{t("thPnl")}</span> <span className="dc dc-prov">◆</span></th>
-                  <th className="num"><span>{t("thFifo")}</span> <span className="dc dc-calc">=</span></th>
-                  <th className="num">{t("thTrades")}</th>
-                  <th className="num"><span>{t("thWin")}</span> <span className="dc dc-calc">=</span></th>
-                  <th className="num">{t("thScore")}</th>
-                  <th>{t("thLast")}</th>
-                  <th />
+                  <th className="th-info th-tip-left" style={{ width: 40 }} tabIndex={0}><span>{t("thWatch")}</span><span className="th-tip">{t("ttWatch")}</span></th>
+                  <th className="th-info th-tip-left" tabIndex={0}><span>{t("thWallet")}</span><span className="th-tip">{t("ttWallet")}</span></th>
+                  <th className="th-info" tabIndex={0}><span>{t("thState")}</span><span className="th-tip">{t("ttState")}</span></th>
+                  <th className="th-info" tabIndex={0}><span>{t("thTags")}</span><span className="th-tip">{t("ttTags")}</span></th>
+                  <th className="num th-info" tabIndex={0}><span>{t("thPnl")}</span><span className="th-tip">{t("ttPnl")}</span></th>
+                  <th className="num th-info" tabIndex={0}><span>{t("thFifo")}</span><span className="th-tip">{t("ttFifo")}</span></th>
+                  <th className="num th-info" tabIndex={0}><span>{t("thTrades")}</span><span className="th-tip">{t("ttTrades")}</span></th>
+                  <th className="num th-info" tabIndex={0}><span>{t("thWin")}</span><span className="th-tip">{t("ttWin")}</span></th>
+                  <th className="num th-info" tabIndex={0}><span>{t("thScore")}</span><span className="th-tip">{t("ttScore")}</span></th>
+                  <th className="num th-info" tabIndex={0}><span>{t("thLast")}</span><span className="th-tip">{t("ttLast")}</span></th>
                 </tr>
               </thead>
               <tbody>
                 {filteredWallets.map((w) => {
-                  const [pillClass, stateLabel] = WATCH_PILL[w.state];
+                  const [pillClass] = WATCH_PILL[w.state];
                   const gPnlCls = pnlColor(w.gmgnPnl);
                   const fPnlCls = pnlColor(w.fifo);
                   const winCls = w.win !== "—" ? winColor(parseFloat(w.win)) : "";
@@ -168,20 +266,28 @@ export function SmartWallets() {
                           onClick={(e) => { e.stopPropagation(); toggleWatch(w.addr); }}
                         />
                       </td>
-                      <td><span className="addr">{w.short}</span><span className="sub muted">{w.alias}</span></td>
+                      <td>
+                        <span className="wallet-td-inner">
+                          <span className="wallet-cell">
+                            <span className="addr">{w.short}</span>
+                            <span className="sub muted">{w.alias}</span>
+                          </span>
+                          <span className="copy-wrap">
+                            {copiedAddr === w.addr && <span className="copied-label">address copied</span>}
+                            <button className="btn-icon copy-btn" title={t("tCopyAddr")} aria-label={t("tCopyAddr")} onClick={(e) => { e.stopPropagation(); copyAddr(e, w.addr); }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+                            </button>
+                          </span>
+                        </span>
+                      </td>
                       <td><span className={`pill ${pillClass}`}>{t(`st${w.state.charAt(0).toUpperCase() + w.state.slice(1)}`)}</span></td>
                       <td>{w.tags.length ? w.tags.map((tg) => <span key={tg} className="pill locked" style={{ textDecoration: "line-through" }}>{tg}</span>) : <span className="small muted">—</span>}</td>
-                      <td className={`num ${gPnlCls}`}><span className="dc dc-prov" style={{ marginRight: 6 }}>◆</span><b>{w.gmgnPnl}</b></td>
-                      <td className={`num ${fPnlCls}`}><span className="dc dc-calc" style={{ marginRight: 6 }}>=</span>{w.fifo}</td>
+                      <td className={`num ${gPnlCls}`}><b>{w.gmgnPnl}</b></td>
+                      <td className={`num ${fPnlCls}`}>{w.fifo}</td>
                       <td className="num">{w.trades}</td>
                       <td className={`num ${winCls}`}>{w.win}<span className="sub muted">n={w.winN}</span></td>
                       <td className="num">{w.score}</td>
                       <td className="num">{w.last}</td>
-                      <td>
-                        <button className="btn-icon copy-btn" title={t("tCopyAddr")} aria-label={t("tCopyAddr")} onClick={(e) => { e.stopPropagation(); copyAddr(w.addr); }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
-                        </button>
-                      </td>
                     </tr>
                   );
                 })}
@@ -192,7 +298,7 @@ export function SmartWallets() {
             <div className="prov" style={{ marginTop: 0, borderTop: 0, paddingTop: 0 }}>
               <span className="src dc dc-prov">◆ provider · GMGN scrape</span>
               <span className="src dc dc-calc">= our compute · fifo_pnl.rs</span>
-              <span className="ts">harvested 04:40 · last refresh 06:00</span>
+              <span className="ts">{payload ? `${payload.total} wallets · ${payload.smartCount} smart · fetched ${new Date(payload.fetchedAt).toLocaleTimeString()}` : t("provWallets")}</span>
             </div>
           </div>
         </div>
@@ -235,11 +341,15 @@ export function SmartWallets() {
           <div className="col-4 panel">
             <div className="panel-head"><h3>{t("hQueue")}</h3><span className="grow" /><span className="hint">{t("htSlots")}</span></div>
             <div className="panel-body" style={{ padding: "10px 16px 12px" }}>
-              <div className="progress" style={{ margin: "2px 0 10px" }}><div className="track"><div className="fill" style={{ width: "33%" }} /></div><span className="pct">2 / 6</span></div>
+              <div className="progress" style={{ margin: "2px 0 10px" }}><div className="track"><div className="fill" style={{ width: payload ? `${Math.min(100, (payload.smartCount / 10) * 100)}%` : "33%" }} /></div><span className="pct">{payload ? `${payload.smartCount} follow set` : "—"}</span></div>
               <table className="dtable">
                 <tbody>
-                  <tr><td><span className="addr">9mDf…2Zx8</span></td><td className="num" style={{ color: "var(--st-ok)" }}>queued</td></tr>
-                  <tr><td><span className="addr">2YaL…Rq5m</span></td><td className="num" style={{ color: "var(--st-ok)" }}>queued</td></tr>
+                  {wallets.filter((w) => w.state === "watched").slice(0, 4).map((w) => (
+                    <tr key={w.addr}><td><span className="addr">{w.short}</span></td><td className="num" style={{ color: "var(--st-ok)" }}>watched</td></tr>
+                  ))}
+                  {!payload || wallets.filter((w) => w.state === "watched").length === 0 ? (
+                    <tr><td><span className="small muted">no watched wallets</span></td><td className="num">—</td></tr>
+                  ) : null}
                 </tbody>
               </table>
               <div className="note" style={{ marginTop: 8 }}>{t("noteQueue")}</div>
@@ -260,13 +370,16 @@ export function SmartWallets() {
           </div>
         )}
       </div>
+
+      {/* SCAN HISTORY */}
+      {tab === "scan" && <ScanHistory />}
     </div>
   );
 }
 
 function WalletDetail({ wallet: w }: { wallet: Wallet }) {
   const { t } = useDashboard();
-  const [pillClass, stateLabel] = WATCH_PILL[w.state];
+  const [pillClass] = WATCH_PILL[w.state];
   const maxDist = Math.max(...w.dist.map((d) => d[0]));
 
   return (
@@ -316,6 +429,9 @@ function WalletDetail({ wallet: w }: { wallet: Wallet }) {
                       </tr>
                     );
                   })}
+                  {w.signals.length === 0 && (
+                    <tr><td colSpan={4}><span className="small muted">— {t("walletNoSignals")}</span></td></tr>
+                  )}
                 </tbody>
               </table>
             </div>

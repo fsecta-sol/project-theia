@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import type { ViewId, Lang } from "./types";
 import { t } from "./i18n";
 
@@ -13,7 +13,6 @@ export interface UserSession {
   since: string;
 }
 
-const ACC_STORE = "theia-users";
 const SESS_KEY = "theia-session";
 
 interface DashboardContextType {
@@ -84,28 +83,28 @@ function getView(): ViewId {
 // The account view keeps the full shell, matching the source's showView().
 const AUTH_VIEWS: ViewId[] = ["auth-login", "auth-signup"];
 
+const emptySubscribe = () => () => {};
+const getServerHydrated = () => false;
+const getClientHydrated = () => true;
+
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
-  const [lang, setLangState] = useState<Lang>("en");
-  const [activeView, setActiveViewState] = useState<ViewId>("v0");
-  const [sidebarCollapsedState, setSidebarCollapsedState] = useState(false);
+  // Persisted preferences are read lazily once on first render. The tree only
+  // mounts after ClientOnly has hydrated, so window/localStorage are safe here.
+  const [theme, setThemeState] = useState<Theme>(() => getTheme());
+  const [lang, setLangState] = useState<Lang>(() => getLang());
+  const [activeView, setActiveViewState] = useState<ViewId>(() => getView());
+  const [sidebarCollapsedState, setSidebarCollapsedState] = useState(
+    () => typeof window !== "undefined" && window.innerWidth <= 1100
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarCollapsed = sidebarCollapsedState;
   const [langLayerOpen, setLangLayerOpen] = useState(false);
   const [accMenuOpen, setAccMenuOpen] = useState(false);
-  const [session, setSession] = useState<UserSession | null>(null);
+  const [session, setSession] = useState<UserSession | null>(() =>
+    getStorage<UserSession | null>(SESS_KEY, null)
+  );
   const [pendingView, setPendingView] = useState<ViewId | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setThemeState(getTheme());
-    setLangState(getLang());
-    const savedView = getView();
-    const sess = getStorage<UserSession | null>(SESS_KEY, null);
-    setSession(sess);
-    setSidebarCollapsedState(window.innerWidth <= 1100);
-    setHydrated(true);
-  }, []);
+  const hydrated = useSyncExternalStore(emptySubscribe, getClientHydrated, getServerHydrated);
 
   // Apply theme to body
   useEffect(() => {

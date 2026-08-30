@@ -81,12 +81,14 @@ def _tier2_fetch(url: str, timeout: int = 30) -> tuple[int, str, float]:
 
 
 @mcp.tool()
-def fetch_page(url: str, timeout: int = 30, tier: str = "auto") -> dict:
+def fetch_page(url: str, timeout: int = 30, tier: str = "auto", max_chars: int = 1_000_000) -> dict:
     """Fetch a single URL. Tier: auto | http | browser.
 
     auto   → try curl_cffi first, fallback to StealthyFetcher on CF/block
     http   → curl_cffi only (fast, no browser)
     browser→ StealthyFetcher only (slow, guaranteed)
+    max_chars: response cap (default 1MB; GMGN leaderboards ~100KB so the old
+    100KB cap truncated valid JSON mid-token).
     """
     t0 = time.time()
 
@@ -96,7 +98,7 @@ def fetch_page(url: str, timeout: int = 30, tier: str = "auto") -> dict:
             "ok": status == 200,
             "status": status,
             "url": url,
-            "content": text[:100_000],  # cap at ~100KB
+            "content": text[:max_chars],  # cap (default 1MB)
             "method": "stealthyfetcher",
             "latency_ms": round(lat1, 1),
             "cf_bypassed": True,
@@ -109,7 +111,7 @@ def fetch_page(url: str, timeout: int = 30, tier: str = "auto") -> dict:
             "ok": status == 200 and not cf,
             "status": status,
             "url": url,
-            "content": text[:100_000],
+            "content": text[:max_chars],
             "method": "curl_cffi",
             "latency_ms": round(lat1, 1),
             "cf_detected": cf,
@@ -124,7 +126,7 @@ def fetch_page(url: str, timeout: int = 30, tier: str = "auto") -> dict:
             "ok": True,
             "status": 200,
             "url": url,
-            "content": text1[:100_000],
+            "content": text1[:max_chars],
             "method": "curl_cffi",
             "latency_ms": round(lat1, 1),
             "cf_detected": False,
@@ -137,7 +139,7 @@ def fetch_page(url: str, timeout: int = 30, tier: str = "auto") -> dict:
         "ok": status2 == 200,
         "status": status2,
         "url": url,
-        "content": text2[:100_000],
+        "content": text2[:max_chars],
         "method": "stealthyfetcher",
         "latency_ms": round(total_latency, 1),
         "cf_bypassed": status2 == 200,

@@ -37,7 +37,7 @@ def _scrub(u: str) -> str:
 
 
 def request_json(url, method="GET", headers=None, body=None, throttle=None,
-                 retries=5, timeout=25):
+                 retries=5, timeout=60):
     """JSON over HTTP with jittered backoff on 429/5xx and optional per-host throttle."""
     if throttle:
         _throttle(*throttle)

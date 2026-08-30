@@ -1,4 +1,4 @@
-import type { PhaseCellData, ExitCriterion, DigestLine, FunnelStage, ScreenedToken, BacktestWindow, Hypothesis, MCPServer, LLMShot, CronJob, ContextWindow, CostBar } from "./types";
+import type { PhaseCellData, ExitCriterion, DigestLine, ScreenedToken, BacktestWindow, Hypothesis, MCPServer, LLMShot, ContextWindow, CostBar } from "./types";
 
 export const PHASES: PhaseCellData[] = [
   { phase: 0, name: "Foundation & deploy", status: "done", statusLabel: "done" },
@@ -45,64 +45,6 @@ export const DIGEST_LINES: DigestLine[] = [
   },
 ];
 
-export const FUNNEL_STAGES: FunnelStage[] = [
-  {
-    seq: "01", name: "GMGN harvest", latency: "latency 24s · probe tier",
-    barWidth: "100%", ct: "12,847", csub: "in",
-    vd: "+6.2% in vs yday", vdClass: "delta-flat",
-    drops: [{ label: "no drop at this stage" }],
-  },
-  {
-    seq: "02", name: "Filter", latency: "latency 41s · compute",
-    barWidth: "37%", ct: "473", csub: "out of 12,847",
-    drops: [
-      { bold: "9,842", label: "no real trade history" },
-      { bold: "2,051", label: "below PnL floor" },
-      { bold: "481", label: "activity too old" },
-    ],
-  },
-  {
-    seq: "03", name: "Buy signals", latency: "latency 6m 10s · on-chain match",
-    barWidth: "23%", ct: "96", csub: "out of 473",
-    vd: "−12% signals vs yday", vdClass: "delta-dn",
-    drops: [
-      { bold: "251", label: "stale signal (>30m)" },
-      { bold: "82", label: "no on-chain buy match" },
-      { bold: "44", label: "duplicate" },
-    ],
-  },
-  {
-    seq: "04", name: "Safety veto", latency: "latency 12s · security lib",
-    barWidth: "21.5%", ct: "78", csub: "passed of 96",
-    vd: "veto rate ≈ yesterday", vdClass: "delta-flat",
-    drops: [
-      { bold: "6", label: "wash_trader tag" },
-      { bold: "5", label: "trade_count too low" },
-      { bold: "4", label: "liquidity gate" },
-      { bold: "2", label: "honeypot" },
-      { bold: "1", label: "rug_score > threshold" },
-    ],
-  },
-  {
-    seq: "05", name: "Paper entry ≤ 30m", latency: "phase-gated",
-    barWidth: "100%", ct: "78", csub: "waiting at gate",
-    locked: true, locknote: "◌ Phase 5 locked",
-    drops: [{ bold: "78", label: "phase gate: paper trading not enabled", gate: true }],
-  },
-  {
-    seq: "06", name: "Exit", latency: "phase-gated",
-    barWidth: "12%", ct: "0", csub: "trades",
-    locked: true,
-    drops: [{ label: "0 entered yesterday", gate: true }],
-  },
-  {
-    seq: "07", name: "Archive", latency: "append-only ledger",
-    barWidth: "12%", ct: "0", csub: "rows",
-    locked: true,
-    drops: [{ label: "empty until exits exist", gate: true }],
-  },
-];
-
 export const SCREENED_TOKENS: ScreenedToken[] = [
   { addr: "SoLq…k1Mx", screen: 41, honeypot: "no", tax: "0.9 / 0.9", mint: "— / —", lp: "100%", top10: "34%", wash: 0.04, rug: 0.08, verdict: "pass", reason: "—" },
   { addr: "MeKp…7Qx2", screen: 37, honeypot: "yes", honeypotFail: true, tax: "9.8 / 22.4", taxFail: true, mint: "— / —", lp: "no", lpFail: true, top10: "68%", top10Fail: false, wash: 0.31, rug: 0.74, verdict: "veto", reason: "honeypot · sell_tax > 15%" },
@@ -144,15 +86,6 @@ export const LLM_SHOTS: LLMShot[] = [
   { skill: "journal", shots: 24, tokIn: "41k", tokOut: "9k", cost: "$0.21", policy: "allow", grounding: "uncited 3", groundingStatus: "warn" },
   { skill: "x-scraper", shots: 6, tokIn: "6k", tokOut: "1.2k", cost: "$0.07", policy: "escalate", grounding: "uncited 1", groundingStatus: "warn" },
   { skill: "backtest", shots: 1, tokIn: "1k", tokOut: "0.2k", cost: "$0.02", policy: "allow", grounding: "cited", groundingStatus: "ok" },
-];
-
-export const CRON_JOBS: CronJob[] = [
-  { cron: "theia-learn", enabled: true, schedule: "*/20 min", lastRun: "06:00", nextRun: "06:20", lastStatus: "ok", phaseGate: "Phase 1" },
-  { cron: "task-runner", enabled: true, schedule: "*/30 min", lastRun: "05:40", nextRun: "06:10", lastStatus: "ok", phaseGate: "Phase 1" },
-  { cron: "gmgn-harvest", enabled: false, schedule: "*/60 min", lastRun: "05:00", nextRun: "—", lastStatus: "parked", phaseGate: "needs Phase 2" },
-  { cron: "screener", enabled: false, schedule: "*/15 min", lastRun: "—", nextRun: "—", lastStatus: "locked", phaseGate: "needs Phase 2" },
-  { cron: "backtest-wf", enabled: false, schedule: "06:00 daily", lastRun: "04:00", nextRun: "—", lastStatus: "manual", phaseGate: "run manually pre-Phase 3" },
-  { cron: "theia-paper", enabled: false, schedule: "continuous", lastRun: "—", nextRun: "—", lastStatus: "locked", phaseGate: "needs Phase 5 · after GO gate" },
 ];
 
 export const CONTEXT_WINDOWS: ContextWindow[] = [

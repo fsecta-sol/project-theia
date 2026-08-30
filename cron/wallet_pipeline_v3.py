@@ -57,7 +57,7 @@ NOTIONAL = 0.5
 LIQ_MIN = 5000
 PRICE_CAP = 1.5
 HYP_ID = "hyp_wallet_cluster_latency"
-MAX_OPEN_PER_WALLET = 3  # at most 3 concurrent open positions per wallet (fix #6)
+MAX_OPEN_PER_WALLET = 5  # at most 5 concurrent open positions per wallet (fix #6)
 # Window for a buy to be tradeable: our edge is follow-within-30min. A signal
 # older than ENTRY_WINDOW would be entered too late (the backtest assumes entry
 # at T+30m window close; older than that = we missed it). Fix #4.

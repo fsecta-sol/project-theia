@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useDashboard } from "@/lib/dashboard-context";
 import { IconMoon, IconSun, IconEye, IconEyeOff } from "@/components/icons";
 
@@ -101,10 +102,10 @@ export function AuthSignup() {
       </div>
       <div className="auth-art-col">
         <div className="auth-art" aria-hidden="true">
-          <img className="auth-art-photo" alt={ctx.t("authArtAlt")} src={ctx.theme === "dark" ? "/image-3.png" : "/image-4.png"} />
+          <Image className="auth-art-photo" alt={ctx.t("authArtAlt")} src={ctx.theme === "dark" ? "/art/auth-art-dark.png" : "/art/auth-art-light.jpg"} fill unoptimized priority />
         </div>
         <div className="auth-quote">
-          <span className="qmark" aria-hidden="true">"</span>
+          <span className="qmark" aria-hidden="true">{"“"}</span>
           <div className="qtext">
             <span>{ctx.t("authQuote")}</span>
             <span className="qwho">{ctx.t("authQuoteWho")}</span>
