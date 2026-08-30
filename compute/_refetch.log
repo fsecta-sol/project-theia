@@ -1,0 +1,130 @@
+smart wallets to refetch: 18
+[2026-08-31 02:46:29] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:46:32] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:46:32] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/4vw54BmAogeRV3vPKWyFet5yf8DTLcREzdSzx4rw9Ud9?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:46:33] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:46:35] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:46:35] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/4vw54BmAogeRV3vPKWyFet5yf8DTLcREzdSzx4rw9Ud9?period=30d> (referer: https://www.google.com/)
+[1/18] 4vw54BmAogeRV3 rPnl7d=83955.23715750751 rPnl30d=254048.55350847883 win7d=None buy30=15215 sell30=5997
+[2026-08-31 02:46:37] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:46:39] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:46:39] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/CzbN6T1gKkKutvuPXcxNmV8FLqzjsDWebWmg9o8e2ZbU?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:46:41] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:46:42] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:46:42] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/CzbN6T1gKkKutvuPXcxNmV8FLqzjsDWebWmg9o8e2ZbU?period=30d> (referer: https://www.google.com/)
+[2/18] CzbN6T1gKkKutv rPnl7d=14706.01586154566 rPnl30d=37667.88060738676 win7d=None buy30=853 sell30=1214
+[2026-08-31 02:46:44] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:46:46] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:46:46] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/4j81GXrMf7njGXAyL92YdchWDkrmJXuWS6UJdtyQ6bTV?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:46:48] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:46:50] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:46:50] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/4j81GXrMf7njGXAyL92YdchWDkrmJXuWS6UJdtyQ6bTV?period=30d> (referer: https://www.google.com/)
+[3/18] 4j81GXrMf7njGX rPnl7d=536.6170293603509 rPnl30d=946.0433401173376 win7d=None buy30=2468 sell30=1777
+[2026-08-31 02:46:51] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:46:53] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:46:53] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/77Uy6sLLggDg9ZB7Yu7xbtCShVTVvJsVNrPdyQFjLVD5?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:46:55] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:46:57] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:46:57] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/77Uy6sLLggDg9ZB7Yu7xbtCShVTVvJsVNrPdyQFjLVD5?period=30d> (referer: https://www.google.com/)
+[4/18] 77Uy6sLLggDg9Z rPnl7d=1103.6647594426909 rPnl30d=10877.125393092192 win7d=None buy30=1594 sell30=2823
+[2026-08-31 02:46:59] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:01] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:01] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/AE4MPGvpMeCA7MwUakAxAQZTzcijPAXcFsoAQmtLrL4V?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:47:02] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:04] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:04] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/AE4MPGvpMeCA7MwUakAxAQZTzcijPAXcFsoAQmtLrL4V?period=30d> (referer: https://www.google.com/)
+[5/18] AE4MPGvpMeCA7M rPnl7d=1759.4219910560248 rPnl30d=6550.378048219424 win7d=None buy30=527 sell30=385
+[2026-08-31 02:47:06] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:08] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:08] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/Hdf53xBDushQ1tddXwnWudssTTVfv4vTiwMHfUWSmcv1?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:47:10] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:12] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:12] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/Hdf53xBDushQ1tddXwnWudssTTVfv4vTiwMHfUWSmcv1?period=30d> (referer: https://www.google.com/)
+[6/18] Hdf53xBDushQ1t rPnl7d=132.05937228227 rPnl30d=2002.7429655405265 win7d=None buy30=406 sell30=390
+[2026-08-31 02:47:13] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:15] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:15] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/9asBCQqp2o5BicHWPJZJ1RBh8hKQR76rejKgkQkzNwPy?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:47:17] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:19] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:19] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/9asBCQqp2o5BicHWPJZJ1RBh8hKQR76rejKgkQkzNwPy?period=30d> (referer: https://www.google.com/)
+[7/18] 9asBCQqp2o5Bic rPnl7d=3953.00808146566 rPnl30d=12914.23047908826 win7d=None buy30=9098 sell30=9097
+[2026-08-31 02:47:21] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:23] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:23] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/2La7jt812VSqmQfLvNkdd8VCjCEzCKyai6NGsmEsTeTK?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:47:24] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:26] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:26] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/2La7jt812VSqmQfLvNkdd8VCjCEzCKyai6NGsmEsTeTK?period=30d> (referer: https://www.google.com/)
+[8/18] 2La7jt812VSqmQ rPnl7d=3299.3084643430143 rPnl30d=3558.1819394331833 win7d=None buy30=84 sell30=92
+[2026-08-31 02:47:28] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:30] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:30] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/9hZSW1HbZdjDPSysFfjuPUGQGyDA2FnPjyrdskxCwGTJ?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:47:32] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:34] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:34] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/9hZSW1HbZdjDPSysFfjuPUGQGyDA2FnPjyrdskxCwGTJ?period=30d> (referer: https://www.google.com/)
+[9/18] 9hZSW1HbZdjDPS rPnl7d=1800.750118240909 rPnl30d=3285.718658580449 win7d=None buy30=1871 sell30=1570
+[2026-08-31 02:47:35] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:37] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:37] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/DgPFb2Q7YrjNFbz7taRNm2DULFhMMkuGEBtM7qQvjqJi?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:47:39] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:41] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:41] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/DgPFb2Q7YrjNFbz7taRNm2DULFhMMkuGEBtM7qQvjqJi?period=30d> (referer: https://www.google.com/)
+[10/18] DgPFb2Q7YrjNFb rPnl7d=36525.38105542766 rPnl30d=22343.319193926294 win7d=None buy30=966 sell30=791
+[2026-08-31 02:47:43] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:45] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:45] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/2fUQ7gzj5JFU8J4J7mzSBLr9RjH8pCiSkywXV6xPKHDo?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:47:46] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:48] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:48] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/2fUQ7gzj5JFU8J4J7mzSBLr9RjH8pCiSkywXV6xPKHDo?period=30d> (referer: https://www.google.com/)
+[11/18] 2fUQ7gzj5JFU8J rPnl7d=2675.717541833265 rPnl30d=1525.750635480072 win7d=None buy30=936 sell30=786
+[2026-08-31 02:47:50] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:52] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:52] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/8og9cGUhGw7AaxfyJq2xY4691wDdvNTum2BSxJQivZa3?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:47:54] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:56] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:56] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/8og9cGUhGw7AaxfyJq2xY4691wDdvNTum2BSxJQivZa3?period=30d> (referer: https://www.google.com/)
+[12/18] 8og9cGUhGw7Aax rPnl7d=15025.487431307287 rPnl30d=13460.283240328925 win7d=None buy30=3516 sell30=2205
+[2026-08-31 02:47:57] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:47:59] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:47:59] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/A376Hr2BoVLUxpLvdZfrs4SM2bKEWJDJ46FKroQ5asCD?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:48:01] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:03] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:03] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/A376Hr2BoVLUxpLvdZfrs4SM2bKEWJDJ46FKroQ5asCD?period=30d> (referer: https://www.google.com/)
+[13/18] A376Hr2BoVLUxp rPnl7d=16840.871218868524 rPnl30d=-506.30604215212725 win7d=None buy30=1110 sell30=1004
+[2026-08-31 02:48:05] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:07] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:07] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/BCVJ7nyp8po94to86WVoi5JLA9jRQbsstq2brsvTuqB8?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:48:08] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:10] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:10] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/BCVJ7nyp8po94to86WVoi5JLA9jRQbsstq2brsvTuqB8?period=30d> (referer: https://www.google.com/)
+[14/18] BCVJ7nyp8po94t rPnl7d=19632.590007464678 rPnl30d=15290.216002300454 win7d=None buy30=292 sell30=172
+[2026-08-31 02:48:12] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:14] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:14] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/5YjAceHCD8t8XQRUhezWSXJxqxTphPfh2g6j1E1eEuGV?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:48:16] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:18] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:18] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/5YjAceHCD8t8XQRUhezWSXJxqxTphPfh2g6j1E1eEuGV?period=30d> (referer: https://www.google.com/)
+[15/18] 5YjAceHCD8t8XQ rPnl7d=1384.181418744494 rPnl30d=-1548.9236696648848 win7d=None buy30=285 sell30=140
+[2026-08-31 02:48:19] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:21] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:22] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/BfqqpQob21mTkU5rFCSBN6tp8Pt8irXquTgvRKUUyAFK?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:48:23] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:25] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:25] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/BfqqpQob21mTkU5rFCSBN6tp8Pt8irXquTgvRKUUyAFK?period=30d> (referer: https://www.google.com/)
+[16/18] BfqqpQob21mTkU rPnl7d=1777.4639434918392 rPnl30d=-185.6769594549405 win7d=None buy30=103 sell30=78
+[2026-08-31 02:48:27] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:29] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:29] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/DhY8Ab5cFbZ2VXfiexmCSFkfjqukinVUzFJ514yeAumV?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:48:31] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:33] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:33] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/DhY8Ab5cFbZ2VXfiexmCSFkfjqukinVUzFJ514yeAumV?period=30d> (referer: https://www.google.com/)
+[17/18] DhY8Ab5cFbZ2VX rPnl7d=8115.139550322152 rPnl30d=45239.55991856673 win7d=None buy30=1118 sell30=1163
+[2026-08-31 02:48:34] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:36] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:36] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/GvDsVPgCpr4ag8RcM992BTaW1MPDuEZArPt6BJU43arY?period=7d> (referer: https://www.google.com/)
+[2026-08-31 02:48:38] WARNING: This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `StealthyFetcher.configure()` instead before fetching
+[2026-08-31 02:48:40] ERROR: No Cloudflare challenge found.
+[2026-08-31 02:48:40] INFO: Fetched (200) <GET https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/GvDsVPgCpr4ag8RcM992BTaW1MPDuEZArPt6BJU43arY?period=30d> (referer: https://www.google.com/)
+[18/18] GvDsVPgCpr4ag8 rPnl7d=7488.29516022375 rPnl30d=6115.105305313935 win7d=None buy30=306 sell30=215
+
+done ok=36/36
+DONE exit=0
