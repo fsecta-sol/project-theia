@@ -186,11 +186,12 @@ survives a 30-min copy delay), then tracks/paper-trades them continuously. Deplo
 
 | Script | What | Schedule |
 |--------|------|----------|
-| `theia-wallet-pipeline.py` | Poll tracked wallets → capture new buys in T+25m to T+35m window → screen (liq>$5k + price cap) → open paper trades | every 5 min |
-| `theia-wallet-monitor.py` | Apply `exit_engine` (stop -35% / TP 2x-4x / 60m time stop) to open positions → archive PnL | every 5 min |
-| `theia-wallet-discovery.py` | Scrape GMGN leaderboard (9 sorts × limit=100 → ~255 wallets) → GMGN-direct gate → flag `is_smart_money=1` | every 1h |
-| `discover_source2.py` | Source-2: Dexscreener trending → Birdeye top_traders → GMGN 7d gate (rPnl7d>0, tx30d<5000, blacklist) → flag `is_smart_money=1` | every 6h |
-| `theia-wallet-report.py` | Aggregate forward stats (expectancy/PF/win-rate) for the daily digest | daily 07:00 |
+| `theia-wallet-pipeline-v4.py` | Poll tracked wallets (`track_enabled=1`) → capture new buys in T+25m to T+35m window → screen (liq>$5k + price cap) → open paper trades + **record OHLCV (v1.1: +volume/mcap) into price_snapshots (forward corpus)** | every 5 min |
+| `wallet_monitor_v3.py` | Apply `exit_engine` (stop -35% / TP 2x-4x / 60m time stop) to open positions → archive PnL | every 5 min |
+| `wallet_discovery_run.py` | Scrape GMGN leaderboard (9 sorts × limit=100 → ~255 wallets) → **GATE V2** → flag `is_smart_money=1` | every 1h |
+| `discover_source2.py` | Source-2: Dexscreener trending → Birdeye top_traders → **GATE V2 (rPnl7d>=10k, churn cap removed)** → flag `is_smart_money=1` + **upsert pools + record OHLCV corpus (`[corpus]`)** | every 3h |
+| `research_runner.py` | No-agent: universe growth + re-run dip/volume batteries + gate-HIT detection + nightly vault digest | every 12h |
+| `theia-wallet-report.py` | Aggregate forward stats (expectancy/PF/win-rate) for the daily digest | disabled |
 
 **Key timing fix (post-v3):** Pipeline now enters only in T+25m to T+35m window (instead of ASAP within 30min)
 to match the backtest timing (T+30m simulated entry). Time stop extended from 30min to 60min (proved
@@ -200,11 +201,37 @@ better in M-04: E +0.0122 improvement).
 (`pnl_7d/30d`, `winrate_7d/30d`, `volume_7d/30d`, `pnl_1d`, `profit_ratio_7d`, `buy_7d`,
 all `limit=100` → ~255 unique wallets/run) and gates **directly on GMGN stats** — no more
 swap-history fetch, `profile_wallet`, or latency train/test backtest (recomputing winrate
-from ~20 txs misled: e.g. GMGN winrate_7d=1.0 on 5 txs & 9.9-day holds). Gate:
-`wr7>=0.6 AND wr30>=0.5 AND txs7>=150 AND hold<48h`, drop `wash_trader`/`bot` tags.
+from ~20 txs misled: e.g. GMGN winrate_7d=1.0 on 5 txs & 9.9-day holds).
 **Every scanned wallet (pass + fail) is appended to `wallet_scan_history`** — the raw
-labeled dataset for backtesting selection rules later. Tracked universe is intentionally
-small (~7-10); selectivity is the edge.
+labeled dataset for backtesting selection rules later.
+
+**GATE V2 (2026-08-31) — OOS-validated selection (supersedes v1 above):**
+The v1 gate (`wr7>=0.6 AND wr30>=0.5 AND txs7>=150`) was **invalidated by an
+out-of-sample persistence test** (n=269 wallets, features measured on scans
+25–28 Aug, forward outcome measured 28–31 Aug; `compute/gate_persistence_stage2b.py`,
+vault: `2026-08-31-gate-discriminator-sweep.md`): win-rate ≥0.60 was
+**anti-predictive** (the ≥0.80 bucket was the WORST forward performer: +0/38%,
+the best bucket was 0.30–0.45: +829/83%), while four stored features predicted
+forward profitability monotonically: **txs7, volume_7d, realized_profit_7d,
+hold<48h**. Current gates:
+- `wallet_discovery_run.gmgn_pass` (leaderboard): bad-tag veto → `wr7>=0.30`
+  floor + scalper guard (`wr7>0.8 AND txs7<500` → reject) → `txs7>=500` →
+  `rPnl7d>=10k` → `volume_7d>=100k` → `hold<48h`; ranked by `whale_rank`
+  (vol+txs+rPnl; wr30 is ranking-only, never a rejection criterion).
+- `discover_source2.gmgn_gate` (trending): `rPnl7d>=10k` (was >0) + scalper
+  guard + hold<48h; **churn cap tx30<5000 removed** (OOS: txs≥2000 = best
+  bucket +6,431/95% — high-frequency whales were the top forward performers).
+- Tracking filter: `wallet_profiles.track_enabled=1` only (pipeline
+  `get_tracked()`); forced-off wallets stay excluded even if they re-pass a
+  later gate; stage-3 prune only touches `track_enabled=1`.
+- **Forward cohort gate-v2 whales (enabled 2026-08-31):** 2fg5 (+105k rPnl7d),
+  suqh (+105k), ardin (+96k), 4vw5 (+83k), F9zT (+29k), CKcW (+23k), 9iaaw
+  (+14k), 2p2mg (+12.5k). Whale cohort vs old-gate cohort expectancy is the
+  forward proof target (≥2 weeks paper before any promotion call).
+- ⚠️ wash_trader veto retained by design (copy-risk insurance): 3 whales with
+  the tag (2fg5/ardin/6G8, rPnl +20k..+105k) are excluded from the polled set
+  despite passing all numeric gates — policy decision recorded in
+  `2026-08-31-wallet-universe-state.md` follow-ups.
 
 **Key learning (the discriminator):** wallet win-rate/PnL is the *wrong* filter — high
 win-rate wallets are speed-scalpers whose edge evaporates <30 min. Trust GMGN's
