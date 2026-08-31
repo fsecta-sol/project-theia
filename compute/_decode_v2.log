@@ -1,0 +1,6 @@
+2fg5   txs=1500 lots=75 ({'sell': 52, 'buy': 23}) real_SOL_leg=27 mints=46 oldest=08-31 10:37
+ardin  txs=1500 lots=3 ({'buy': 2, 'sell': 1}) real_SOL_leg=2 mints=2 oldest=08-31 17:52
+6G8    txs=1500 lots=1373 ({'sell': 432, 'buy': 941}) real_SOL_leg=875 mints=355 oldest=08-24 05:32
+
+saved _whale_lots_v2.json
+DONE exit=0

@@ -1,0 +1,8 @@
+suqh   sigs=60 tried=0 lots=0 buys=0 sells=0 mints=0
+ardin  sigs=60 tried=4 lots=0 buys=0 sells=0 mints=0
+2fg5   sigs=60 tried=0 lots=0 buys=0 sells=0 mints=0
+6G8    sigs=60 tried=40 lots=28 buys=14 sells=14 mints=5
+   sample buy: mint=EgSeKQNq qty=100.00 ts=1788168065
+
+saved _whale_lots_decoded.json
+DONE exit=0
