@@ -28,21 +28,36 @@ HERE = Path(__file__).resolve().parent
 DATA = Path("/home/hermes/theia-gate/data")
 
 # ── GMGN selection gate (GMGN-FIRST) ────────────────────────────────────────
-# Diturunkan dari distribusi LIVE leaderboard GMGN (2026-08-27):
-#  - top trader punya ribuan txs (txs7>=300), sample kecil (<20) = noise
-#  - wr7>=0.60 realistis (top leaderboard winrate 7d umumnya 0.60-0.65)
-#  - wr30>=0.50 = konsistensi lintas periode (anti 1-week-wonder)
-#  - avg_holding GMGN dihitung dari SEMUA txs; trader top umumnya 25-45h,
-#    jadi hold<6h hampir pasti 0 lolos. hold<12h = toleransi masuk akal.
-# 2026-08-27: TXS_7D_MIN 300 -> 150 (relaxed; universe 77 -> ~200 dengan
-# limit=100 + orderby baru). Distribusi live: txs7>=150 & wr7>=0.6 & wr30>=0.5
-# = 9 wallet vs 8 di >=300; dengan universe lebih besar efeknya signifikan.
-WR_7D_MIN = 0.60       # winrate 7d minimal
-WR_30D_MIN = 0.50      # winrate 30d minimal (konsistensi, anti 1-run-wonder)
-TXS_7D_MIN = 150       # minimal aktivitas 7d (anti sample kecil)
-HOLD_MAX_S = 48 * 3600 # avg holding < 48 jam (top trader SOL memecoin pegang 1-3 hari;
-                       # 6-12h terlalu ketat — 0 lolos di leaderboard live)
+# GATE V2 (2026-08-31, OOS-confirmed via gate-persistence sweep, n=269 wallets,
+# feature@25-28Aug → outcome@28-31Aug, compute/gate_persistence_stage2b.py):
+#  - wr7>=0.60 was ANTI-predictive OOS (wr>=0.80 bucket = worst: +0, 38% +ve;
+#    best bucket 0.30-0.45: +829, 83%). High win-rate = speed scalper whose
+#    edge dies <30min (postmortem) → follower retail suffers. Now FLOOR only.
+#  - Real forward-predictive features (OOS monotonic): txs7 (>=500: +1,845/93%;
+#    >=2000: +6,431/95%), volume_7d (q4: +3,649/91%), realized_profit_7d
+#    (>=10k: +4,454/85%; >=50k: +16,302/89%), hold<48h (>48h: +19/54%).
+#  - Anti-signal guard: wr7>0.8 with low activity = small-sample scalper → reject.
+#  - bad-tag veto retained as copy-risk insurance (not a PnL edge: tagged
+#    cohort still printed +4.8k median).
+# Rank (not gate): volume_7d + txs7 (whale score).
+# NOTE: rPnl-level & txs are wallet-momentum features (autocorrelation by
+# construction; OOS split mitigates, forward paper cohort is the proof).
+WR_7D_MIN = 0.30        # floor only (anti-noise; NOT the edge)
+WR30_RANK_ONLY = True   # wr30 used for ranking, not rejection
+TXS_7D_MIN = 500        # activity floor (OOS: 500-2000 +1,845/93%)
+RPNL_7D_MIN = 10_000    # wallet must already print (OOS: >=10k +4,454/85%)
+HOLD_MAX_S = 48 * 3600  # unchanged (OOS: >48h +19/54%)
+VOL_7D_MIN = 100_000    # ≈ q3 of 2026-08-30 universe (OOS: q4 +3,649/91%)
+WR7_SCALPER_GUARD = (0.80, 500)  # wr7>0.8 AND txs7<500 → reject (small-sample scalper)
 BAD_TAGS = {"wash_trader", "bot"}
+
+
+def whale_rank(w: dict) -> float:
+    """Ranking score: prefer top-quartile volume + high activity + big PnL."""
+    vol = _f(w.get("volume_7d"))
+    txs = _f(w.get("txs_7d"))
+    r7 = _f(w.get("realized_profit_7d"))
+    return vol / 1e6 + txs / 1000.0 + r7 / 10000.0
 
 
 def _load_wallet_common():
@@ -83,7 +98,8 @@ def _fn(v):
 
 
 def gmgn_pass(w: dict) -> tuple[bool, str]:
-    """Return (pass, reason). Trust GMGN data; no recompute."""
+    """GATE V2 (2026-08-31): floor checks + OOS-confirmed activity/PnL gates.
+    Trust GMGN data; no recompute. wr30 is RANKING, not rejection."""
     tags = {str(t).lower() for t in (w.get("tags") or [])}
     if tags & BAD_TAGS:
         return False, f"bad_tag:{sorted(tags & BAD_TAGS)}"
@@ -93,15 +109,21 @@ def gmgn_pass(w: dict) -> tuple[bool, str]:
     hold = _fn(w.get("avg_holding_period_7d"))
     if hold is None:
         hold = 0.0
+    r7 = _f(w.get("realized_profit_7d"))
+    vol = _f(w.get("volume_7d"))
     if wr7 < WR_7D_MIN:
         return False, f"wr7={wr7:.2f}"
-    if wr30 < WR_30D_MIN:
-        return False, f"wr30={wr30:.2f}"
+    if wr7 > WR7_SCALPER_GUARD[0] and txs < WR7_SCALPER_GUARD[1]:
+        return False, f"scalper_wr7={wr7:.2f}+txs7={txs:.0f}"
     if txs < TXS_7D_MIN:
         return False, f"txs7={txs:.0f}"
+    if r7 < RPNL_7D_MIN:
+        return False, f"rPnl7d={r7:.0f}"
+    if vol < VOL_7D_MIN:
+        return False, f"vol7d={vol:.0f}"
     if hold > HOLD_MAX_S:
         return False, f"hold={hold/3600:.1f}h"
-    return True, "ok"
+    return True, f"ok rank={whale_rank(w):.2f} wr30={wr30:.2f}"
 
 
 def _subprocess_run(cmd):

@@ -23,17 +23,22 @@ import sys
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path("/home/hermes/.hermes/profiles/theia/scripts")))
+from wallet_common import ohlcv_for  # noqa: E402
+
 DEPLOY = Path("/home/hermes/.hermes/theia/mcp")
 DB = Path.home() / ".hermes/theia/theia.db"
 GATE_DIR = Path.home() / "theia-gate/data"
 
-# ── thresholds (grounded by concept test 2026-08-28) ────────────────────────
+# ── thresholds ──────────────────────────────────────────────────────────────
 H24_MIN = 50.0        # h24 price change >= 50%
 H6_MIN = 50.0         # h6 price change >= 50%
 LIQ_MIN = 30_000      # reserve_in_usd >= $30k
 MCAP_MAX = 50e6       # mcap < $50M (skip blue chips)
 TRADE_MIN = 5         # top_trader min trades
-TX30_CHURN_MAX = 5000 # gmgn buy_30d+sell_30d < 5000 (not a churn bot)
+# GATE V2 (2026-08-31, OOS-confirmed): rp7 floor 10k (was >0), churn cap removed
+RPNL_7D_MIN = 10_000  # wallet must already print (OOS >=10k → +4,454/85%)
+HOLD_MAX_S = 48 * 3600  # OOS: >48h → +19/54%
 BAD_TAGS = {"bundler", "dev", "sniper", "chef", "fresh", "smart_trader",
             "bot", "wash_trader", "mev"}
 # Persistent blacklist: wallets seen tagged bundler/dev on ANY token. Birdeye
@@ -130,17 +135,32 @@ def gmgn_stats(addr: str, timeout_ms: int = 45000, use_cache: bool = True,
 
 
 def gmgn_gate(stats) -> tuple[bool, str]:
-    """The mandatory GMGN 7d gate: profit AND not churn-bot."""
+    """GATE V2 (2026-08-31, OOS-confirmed): profit floor + wallet-momentum.
+
+    Changes vs v1 (validated 2026-08-31 via gate_persistence sweep, n=269):
+    - rp7 floor raised 0 -> 10_000 (OOS: rPnl7d>=10k → +4,454 fwd/85%+ve;
+      >=50k → +16,302/89%; near-zero PnL wallets are the random mass).
+    - churn cap tx30<5000 REMOVED (OOS: txs>=2000 → +6,431/95% monotonic;
+      high-frequency whales were the BEST forward performers, e.g. our own
+      +105k/7d whales were rejected by the old churn cap).
+    - scalper guard: wr7>0.8 AND txs7<500 → reject (small-sample scalper,
+      wr7>=0.80 was the WORST OOS bucket).
+    Hold<48h retained (OOS: >48h → +19/54%).
+    """
     if not stats or not stats.get("ok"):
         return False, "gmgn_unavailable"
     d = (stats.get("data") or {}).get("data") or {}
     rp7 = _f(d.get("realized_profit_7d"))
-    if rp7 <= 0:
-        return False, f"rPnl7d={rp7:.1f}"
-    tx30 = int(_f(d.get("buy_30d"))) + int(_f(d.get("sell_30d")))
-    if tx30 > TX30_CHURN_MAX:
-        return False, f"churn_tx30={tx30}"
-    return True, f"rPnl7d={rp7:.1f} tx30={tx30}"
+    if rp7 < RPNL_7D_MIN:
+        return False, f"rPnl7d={rp7:.0f}"
+    wr7 = _f(d.get("winrate"))
+    txs7 = _f(d.get("buy_7d")) + _f(d.get("sell_7d"))
+    if wr7 > 0.80 and txs7 < 500:
+        return False, f"scalper_wr7={wr7:.2f}+txs7={txs7:.0f}"
+    hold = _f(d.get("avg_holding_peroid"))
+    if hold > HOLD_MAX_S:
+        return False, f"hold={hold/3600:.1f}h"
+    return True, f"rPnl7d={rp7:.0f} txs7={txs7:.0f}"
 
 
 def main():
@@ -216,6 +236,53 @@ def main():
         name = (p.get("attributes") or {}).get("name", "?")
         if not mint:
             continue
+        # ── pool bookkeeping: upsert pool + record OHLCV (universe corpus) ──
+        # Fixes: `pools` table was never updated by source2 (last pool 2026-08-21),
+        # so no fresh-pool OHLCV corpus existed for universe-wide backtests.
+        try:
+            pool_addr = (p.get("relationships") or {}).get("base_token", {}).get("data", {}).get("id", "")
+            pool_addr = pool_addr.replace("solana_", "")
+            pool_id = (p.get("relationships") or {}).get("base_token", {}).get("data", {}).get("id", "")
+            # pool_addr from the pair relationship if present, else fall back to base token id
+            pair_rel = (p.get("relationships") or {}).get("base_token", {})
+            pool_addr = (pair_rel.get("data") or {}).get("id", "") or mint
+            pool_addr = pool_addr.replace("solana_", "")
+            if pool_addr:
+                con.execute(
+                    "INSERT OR REPLACE INTO pools(pool_addr, mint, dex, amm_model, liquidity_usd,"
+                    " reserves_base, reserves_quote, price, updated_ts) VALUES (?,?,?,?,?,?,?,?,?)",
+                    (pool_addr, mint, (p.get("attributes") or {}).get("dex", "") or "unknown",
+                     "v2", (p.get("attributes") or {}).get("liquidity_usd") or 0,
+                     0.0, 0.0, (p.get("attributes") or {}).get("price_usd") or 0, now))
+                con.commit()
+                # record OHLCV (birdeye→gecko→dex ladder; v/mcap captured when present)
+                try:
+                    rows, src = ohlcv_for(dexdata, birdeye, mint, before_ts=0, ttl=300)
+                    if rows:
+                        n_rec = 0
+                        for r in rows:
+                            try:
+                                ts = int(r[0])
+                                o, h, l, c = float(r[1]), float(r[2]), float(r[3]), float(r[4])
+                                v = float(r[5]) if len(r) > 5 and r[5] is not None else 0.0
+                                mcap = float(r[6]) if len(r) > 6 and r[6] is not None else 0.0
+                            except (TypeError, ValueError, IndexError):
+                                continue
+                            if con.execute("SELECT 1 FROM price_snapshots WHERE pool_addr=? AND ts=?",
+                                           (pool_addr, ts)).fetchone():
+                                continue
+                            con.execute(
+                                "INSERT OR IGNORE INTO price_snapshots"
+                                "(pool_addr,ts,o,h,l,c,currency,v,mcap) VALUES (?,?,?,?,?,?,?,?,?)",
+                                (pool_addr, ts, o, h, l, c, "token", v, mcap))
+                            n_rec += 1
+                        con.commit()
+                        if n_rec:
+                            print(f"  [corpus] {mint[:10]} +{n_rec} OHLCV rows (src={src})", flush=True)
+                except Exception as e:
+                    print(f"  [corpus] {mint[:10]} ohlcv err {type(e).__name__}", flush=True)
+        except Exception as e:
+            print(f"  [corpus] {mint[:10]} pool err {type(e).__name__}", flush=True)
         try:
             traders = birdeye.top_traders(token_addr=mint, time_frame="24h", limit=10)
         except Exception as e:
