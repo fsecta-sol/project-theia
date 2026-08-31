@@ -1,0 +1,32 @@
+
+== suqh (suqh5sHtr8..) — 4400 txs ==
+  fee-payers: [('4sWPwW2BwG', 8), ('9LXVVAWBkS', 6), ('7jKeyeybdM', 6), ('HYUwe2GAAU', 5), ('J137zJ6Dbz', 5)]
+  top SOL senders: [('HF3s85NVgp', 19.0), ('ExzT1wYj2E', 11.88), ('AiFqrztULk', 0.15)]
+  top token senders: [('DUa6v461G3', 14), ('Fi9hWdwEd6', 6), ('EEhXC4xAKV', 5), ('8djdLATddo', 2), ('7TyNHJBJWu', 2)]
+
+== 2fg5 (2fg5QD1eD7..) — 800 txs ==
+  fee-payers: [('7ovu7sqYQG', 9), ('4sWPwW2BwG', 8), ('3cJKmc8SUs', 5), ('EBLANccreC', 5), ('9LXVVAWBkS', 4)]
+  top SOL senders: []
+  top token senders: [('BQfcRuZLgo', 5), ('2VgtAcewTG', 4), ('FwTbbNSQFY', 3), ('8djdLATddo', 2), ('42xXq6gjvb', 2)]
+
+== ardin (ardinRsN1m..) — 800 txs ==
+  fee-payers: []
+  top SOL senders: []
+  top token senders: [('EUEJzYf5dj', 1)]
+
+== 6G8 (6G8Cu53PRg..) — 800 txs ==
+  fee-payers: [('FHpcNSe6tb', 9), ('s7epdqiFrL', 3), ('5PvFA1gt4T', 2)]
+  top SOL senders: [('8LR8ECxm4Z', 494.6), ('QXJh5n1aF6', 23.5), ('AaBk8kHPKo', 15.72), ('F7p3dFrjRT', 11.25), ('fr6yQkDmWy', 0.95)]
+  top token senders: [('ASS7KfEW3X', 40), ('E1bh2ZzXCj', 24), ('B6eeME9LNo', 20), ('FVsFJM7yen', 17), ('J8KDQ3jHSs', 17)]
+
+== HOP 2 — each whale's top fee-payer behavior (3 pages) ==
+  suqh: top payer 4sWPwW2BwG — txs=300 SWAP-type=0 own-payers=[] whale-pays-here=0
+  2fg5: top payer 7ovu7sqYQG — txs=300 SWAP-type=36 own-payers=[] whale-pays-here=0
+  6G8: top payer FHpcNSe6tb — txs=300 SWAP-type=220 own-payers=[] whale-pays-here=0
+
+saved _money_trace.json (290 discovered wallets)
+
+== discovered wallets already in wallet_scan_history ==
+  (0 known / 290 never-scanned)
+saved 290 unknown wallets -> _money_unknowns.json
+DONE exit=0
