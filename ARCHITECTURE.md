@@ -91,6 +91,29 @@ target: ≥2 weeks paper before any promotion call.
 - Gateway runs under systemd user service; a reboot kills all cron until gateway restart
   (documented restart procedure in agent memory)
 
+### Design critique — data-quality gates (user discussion 2026-09-01, open items)
+
+User thesis: the repeated "no edge" verdicts are partly a **data-quality artifact**, not
+proof of no edge. Three concrete gaps identified and accepted as open work:
+
+1. **Timing window unproven for the current cohort.** T+25–35m entry was tuned on the OLD
+   cohort (wr7≥0.6 scalpers) whose T+1–5m edge died <30m. Gate-v2 whales (txs7≥500,
+   rPnl7d≥$10k) have a different profile; the optimal entry delay may be shorter. Open
+   item: backtest a T+{5,10,15,25,35}m entry grid on `wallet_signals` + `price_snapshots`
+   per-mint history — the data exists.
+2. **Backtest inputs skew to "already falling" charts.** Entry signals observed late
+   (post-25m) are disproportionately post-spike/pullback shapes, and retro-fetched OHLCV
+   contaminates tails (proven 08-31/09-01 artifacts). Verdicts computed on this data are
+   biased toward "no edge". Fix direction: forward-only tape recording (next item) +
+   organic-only provenance guard (already enforced in research_runner).
+3. **Token "fame"/liveness is unmeasured.** Currently the pipeline records 1m OHLCV only
+   for mints that produced a screened signal (event-driven, not lifecycle). DexScreener's
+   free pool attributes expose richer LIVE popularity signals per pool: buys/sells/buyers/
+   sellers over m5/m15/m30/h1/h6/h24 windows + volume_usd per window — a direct
+   "is this token still crowded" measure that costs one keyless API call. Open item:
+   record these per-signal (token_activity_snapshots table) and use as entry/exit context
+   (buyer count trend, buy/sell imbalance, volume z-score across windows).
+
 ---
 
 ## Build reality & sequencing — HISTORICAL AUDIT (2026-08-09)
