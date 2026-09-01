@@ -1,0 +1,27 @@
+organic mints (>=60 candles): 450
+cost per trade: 0.00432 SOL
+
+hard_stop=-0.25        n=23080 exp=+0.0111 pf=1.154 win=0.30
+hard_stop=-0.35        n=23080 exp=+0.0100 pf=1.121 win=0.33
+hard_stop=-0.5         n=23080 exp=+0.0112 pf=1.123 win=0.36
+time_stop=60m          n=23080 exp=+0.0100 pf=1.121 win=0.33
+time_stop=90m          n=23080 exp=+0.0194 pf=1.216 win=0.32
+time_stop=120m         n=23080 exp=+0.0327 pf=1.351 win=0.31
+time_stop=240m         n=23080 exp=+0.0713 pf=1.717 win=0.30
+ladder live            n=23080 exp=+0.0100 pf=1.121 win=0.33
+ladder 1.5x/3x         n=23080 exp=-0.0043 pf=0.944 win=0.38
+single TP 3x           n=23080 exp=+0.0026 pf=1.030 win=0.32
+single TP 2x           n=23080 exp=-0.0071 pf=0.914 win=0.33
+no ladder (trail-only) n=23080 exp=+0.0249 pf=1.426 win=0.33
+trail_drop=0.25        n=23080 exp=+0.0100 pf=1.121 win=0.33
+trail_drop=0.35        n=23080 exp=+0.0075 pf=1.091 win=0.33
+trail_drop=0.5         n=23080 exp=+0.0065 pf=1.079 win=0.33
+
+== TOP 5 configs ==
+  time_stop=240m           exp=+0.0713 pf=1.717 n=23080 win=0.30
+  time_stop=120m           exp=+0.0327 pf=1.351 n=23080 win=0.31
+  no ladder (trail-only)   exp=+0.0249 pf=1.426 n=23080 win=0.33
+  time_stop=90m            exp=+0.0194 pf=1.216 n=23080 win=0.32
+  hard_stop=-0.5           exp=+0.0112 pf=1.123 n=23080 win=0.36
+
+saved _exit_tuning.json
