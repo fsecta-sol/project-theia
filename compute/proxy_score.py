@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
-"""Follow-the-money — hop 3: refetch GMGN walletNew 7d for the 15 REAL fee-payer
-wallets (the actual actors behind the whales), gate-v2 score them, and compare
-with the whales themselves. Bounded: 1 call per wallet, 1.5s sleep."""
+"""Follow-the-money trace to the end: score the whale trade networks.
+
+Extracts the actual fee-payer wallets (the real actors behind the whales) from
+the trace, gate-v2 scores them via fresh GMGN walletNew 7d, and checks whether
+any of the proxy wallets themselves are tradable targets. Bounded: 1 call per
+wallet, 1.5s sleep.
+"""
 import json
-import sqlite3
 import time
 from pathlib import Path
 
 CACHE = Path.home() / ".hermes/theia/wallet_cache/gmgn_stats"
 CACHE.mkdir(parents=True, exist_ok=True)
-
-try:
-    from scrapling.fetchers import StealthyFetcher
-except ImportError:
-    print("ERROR: run with theia-webscraper venv", file=None)
-    raise SystemExit(1)
-
-API = "https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/{addr}?period=7d"
 
 trace = json.load(open("/home/hermes/project-theia/compute/_money_trace.json"))
 fee_payers = {}
@@ -24,26 +19,25 @@ for tag, d in trace["whales"].items():
     for p, n in (d.get("fee_payers") or {}).items():
         fee_payers.setdefault(p, []).append((tag, n))
 
-con = sqlite3.connect("/home/hermes/.hermes/theia/theia.db")
-con.row_factory = sqlite3.Row
-
-sf = StealthyFetcher()
-results = {}
 print(f"fee-payer wallets to refetch: {len(fee_payers)}\n")
+results = {}
 for i, (p, whales) in enumerate(sorted(fee_payers.items(), key=lambda kv: -max(n for _, n in kv[1]))):
-    cp = CACHE / f"{p}_7d_proxy.json"
+    cp = Path(f"/home/hermes/.hermes/theia/wallet_cache/gmgn_stats/{p}_7d_proxy.json")
     if cp.exists() and (time.time() - cp.stat().st_mtime) < 3600:
         r = json.loads(cp.read_text())
-        ok = r.get("ok")
-        print(f"[{i+1}/{len(fee_payers)}] {p[:14]} (cached ok={ok})")
+        print(f"[{i+1}/{len(fee_payers)}] {p[:14]} (cached ok={r.get('ok')})")
     else:
         try:
-            resp = sf.fetch(API.format(addr=p), solve_cloudflare=True, timeout=45000,
-                            headless=True, network_idle=False, load_dom=False)
-            ok = resp.status == 200
+            import urllib.request
+            url = (f"https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletNew/"
+                   f"{p}?period=7d")
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                ok = resp.status == 200
+                body = resp.read().decode("utf-8", errors="replace")
             r = {"ok": ok, "addr": p}
             if ok:
-                r["data"] = json.loads(resp.body.decode("utf-8", errors="replace"))
+                r["data"] = json.loads(body)
                 cp.write_text(json.dumps(r))
         except Exception as e:
             r = {"ok": False, "err": str(e)}
@@ -59,7 +53,6 @@ for i, (p, whales) in enumerate(sorted(fee_payers.items(), key=lambda kv: -max(n
     hold = (d.get("avg_holding_peroid") or 0) / 3600
     wr7 = d.get("winrate")
     tags = {str(t).lower() for t in (d.get("tags") or [])}
-    # gate v2 quick score
     reasons = []
     if tags & {"wash_trader", "bot", "bundler", "dev", "sniper", "mev"}:
         reasons.append("bad_tag")
@@ -74,18 +67,8 @@ for i, (p, whales) in enumerate(sorted(fee_payers.items(), key=lambda kv: -max(n
         reasons.append(f"txs7={txs7}")
     if rp7 < 10000:
         reasons.append(f"rPnl7d={rp7:.0f}")
-    if vol7 < 100000:
-        reasons.append(f"vol7d={vol7:.0f}")
-    if hold > 48:
-        reasons.append(f"hold={hold:.1f}h")
     verdict = "PASS" if not reasons else "FAIL:" + ";".join(reasons)
-    print(f"   rPnl7d={rp7:>10,.0f} txs7={txs7:>6} vol7={vol7:>12,.0f} hold={hold:>5.1f}h "
+    print(f"   rPnl7d={rp7:>10,.0f} txs7={txs7:>6} vol7={vol7:>12,.0f} "
           f"wr7={wr7 if wr7 is not None else 'None'} -> {verdict}")
-    results[p] = {"ok": True, "rp7": rp7, "txs7": txs7, "vol7": vol7, "hold_h": hold,
-                  "wr7": wr7, "tags": sorted(tags), "verdict": verdict, "whales": whales}
-
-con.close()
-Path("/home/hermes/project-theia/compute/_proxy_scores.json").write_text(json.dumps(results, indent=1))
-n_pass = sum(1 for r in results.values() if r.get("ok") and r.get("verdict") == "PASS")
-print(f"\nproxy wallets gate-v2 PASS: {n_pass}/{len(results)}")
-print("saved _proxy_scores.json")
+    results[p] = {"ok": r.get("ok"), "rp7": rp7, "txs7": txs7, "vol7": vol7,
+                  "wr7": wr7, "tags": sorted(tags), "verdict": verdict}

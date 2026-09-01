@@ -1,0 +1,31 @@
+== HF3s(funder suqh) (HF3s85NVgp..) — fetching to origin ==
+    page 5: 500 txs, oldest 08-13 18:48
+    page 10: 1000 txs, oldest 08-02 23:50
+    page 15: 1500 txs, oldest 06-01 23:17
+    page 20: 2000 txs, oldest 05-12 22:25
+  oldest tx: 05-08 04:00 | txs=2147
+  funders: [('F1ZLkFyTnz', 688.9), ('6yYzwmfQS9', 18.0), ('BY4StcU9Y2', 5.1), ('D7Tu57MMQh', 4.5), ('7XAZ7SJnxh', 2.5), ('3ujVcouvvc', 0.0)]
+  outbound: [('2fg5QD1eD7', 224.4), ('F1ZLkFyTnz', 199.8), ('suqh5sHtr8', 61.0), ('H8524UrLT2', 44.0), ('7NAd2EpYGG', 14.1), ('4ZBRxPYSZo', 7.0)]
+== 9u7y(funder 2fg5) (9u7yHBjxWC..) — fetching to origin ==
+    page 5: 500 txs, oldest 08-31 03:04
+    page 10: 1000 txs, oldest 08-29 10:53
+    page 15: 1500 txs, oldest 08-28 09:39
+    page 20: 2000 txs, oldest 08-28 00:05
+    page 25: 2500 txs, oldest 08-27 06:49
+    page 30: 3000 txs, oldest 08-26 23:10
+  oldest tx: 08-26 23:10 | txs=3000
+  funders: [('2fg5QD1eD7', 1770.5)]
+  outbound: [('2fg5QD1eD7', 3787.5)]
+== 8LR8(hub 6G8) (8LR8ECxm4Z..) — fetching to origin ==
+    page 5: 500 txs, oldest 08-28 11:25
+    page 10: 1000 txs, oldest 08-26 00:16
+    page 15: 1500 txs, oldest 08-23 09:31
+    page 20: 2000 txs, oldest 08-19 20:54
+    page 25: 2500 txs, oldest 08-17 01:59
+    page 30: 3000 txs, oldest 08-14 07:29
+  oldest tx: 08-14 07:29 | txs=3000
+  funders: [('6G8Cu53PRg', 1233.7)]
+  outbound: [('6G8Cu53PRg', 1690.3)]
+
+saved _root_trace2.json
+DONE exit=0

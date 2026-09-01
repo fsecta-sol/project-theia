@@ -1,0 +1,47 @@
+== suqh: using stored 4400 txs ==
+  oldest tx: 08-31 10:16 | txs=4400
+  funders (top): [('HF3s85NVgp', 19.0), ('ExzT1wYj2E', 11.9), ('AiFqrztULk', 0.1)]
+  outbound (top): [('ExzT1wYj2E', 15.1), ('Fi9hWdwEd6', 1.6), ('5BSPXcM2QM', 1.1), ('ECDrSz47nX', 0.1)]
+== 2fg5: fetching full history to origin ==
+    page 5: 500 txs, oldest 09-01 06:30
+    page 10: 1000 txs, oldest 09-01 06:29
+    page 15: 1500 txs, oldest 09-01 06:27
+    page 20: 2000 txs, oldest 09-01 06:26
+    page 25: 2500 txs, oldest 09-01 06:24
+    page 30: 3000 txs, oldest 09-01 06:22
+  oldest tx: 09-01 06:22 | txs=3000
+  funders (top): [('9u7yHBjxWC', 7.0)]
+  outbound (top): [('9u7yHBjxWC', 11.9), ('3PvqoztjnR', 0.1), ('2ApLdwLrGa', 0.0), ('EqGzowSp6c', 0.0)]
+== ardin: fetching full history to origin ==
+    page 5: 500 txs, oldest 09-01 06:30
+    page 10: 1000 txs, oldest 09-01 06:29
+    page 15: 1500 txs, oldest 09-01 06:28
+    page 20: 2000 txs, oldest 09-01 06:26
+    page 25: 2500 txs, oldest 09-01 06:25
+    page 30: 3000 txs, oldest 09-01 06:23
+  oldest tx: 09-01 06:23 | txs=3000
+  funders (top): []
+  outbound (top): [('25ivAECXh4', 2.9), ('DACei4BDRU', 2.0), ('ECDrSz47nX', 0.0), ('BfFX9rUm8q', 0.0)]
+== 6G8: fetching full history to origin ==
+    page 5: 500 txs, oldest 08-29 05:21
+    page 10: 1000 txs, oldest 08-27 04:20
+    page 15: 1500 txs, oldest 08-24 15:31
+    page 20: 2000 txs, oldest 08-22 20:04
+    page 25: 2500 txs, oldest 08-19 13:12
+    page 30: 3000 txs, oldest 08-17 04:40
+  oldest tx: 08-17 04:40 | txs=3000
+  funders (top): [('8LR8ECxm4Z', 1456.5), ('F7p3dFrjRT', 65.4), ('QXJh5n1aF6', 25.1), ('AaBk8kHPKo', 15.7), ('589ujdyD89', 10.0), ('Hze95FdKgD', 8.2)]
+  outbound (top): [('8LR8ECxm4Z', 1041.6), ('3xiXXj9KKA', 275.0), ('7uTT8Xi5RW', 69.0), ('BJqrMMVFrM', 57.8)]
+== shared payer 4sWPwW2BwG: fetching origin ==
+    page 5: 500 txs, oldest 09-01 05:44
+    page 10: 1000 txs, oldest 09-01 04:37
+  oldest tx: 09-01 04:37 | txs=1000
+  funders: []
+== shared payer 9LXVVAWBkS: fetching origin ==
+    page 5: 500 txs, oldest 09-01 05:42
+    page 10: 1000 txs, oldest 09-01 04:34
+  oldest tx: 09-01 04:34 | txs=1000
+  funders: []
+
+saved /home/hermes/project-theia/compute/_root_trace.json
+DONE exit=0
