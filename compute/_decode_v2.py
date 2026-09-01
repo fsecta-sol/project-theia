@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Decode 2fg5 + ardin via enhanced-API accountData.tokenBalanceChanges (the
-method that worked for suqh). Bounded: 15 pages x 100 txs per wallet, stops
-either at cutoff or page limit. Signs buys/sells by the SOL leg (nativeTransfers
-in/out of the wallet) like _decode_suqh_lots."""
+"""Decode 2fg5 + ardin + 6G8 via enhanced-API accountData.tokenBalanceChanges
+(the method that worked for suqh). Bounded: 15 pages x 100 txs per wallet."""
 import datetime
 import importlib.util
 import json
+import time
 from collections import Counter
 from pathlib import Path
 
@@ -22,7 +21,6 @@ TARGETS = [
     ("6G8Cu53PRgm5aPHxMaZRguYHJfaNxmnmgoR129cKMvJk", "6G8"),
 ]
 PAGES = 15
-MAX_AGE_S = 86400 * 7  # ~7 days window
 
 out = {}
 for w, tag in TARGETS:
@@ -37,17 +35,13 @@ for w, tag in TARGETS:
                 break
             except Exception as e:
                 print(f"  {tag} page{page} attempt{attempt}: {type(e).__name__} — retrying")
-                import time
                 time.sleep(4 * (attempt + 1))
         if batch is None:
             break
         txs += batch
-        last_ts = batch[-1].get("timestamp") or 0
         before = batch[-1].get("signature")
-        if last_ts < (datetime.datetime.now().timestamp() - MAX_AGE_S):
-            cutoff_ts = last_ts
+        if len(batch) < 100:
             break
-    # decode owner-delta lots
     lots = []
     for t in txs:
         hit = None
