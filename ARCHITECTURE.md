@@ -8,7 +8,92 @@
 > non-negotiable principles, the free-tier data plumbing) and throws out the copy-trade
 > strategy.
 
-## Build reality & sequencing — READ FIRST (audited 2026-08-09)
+---
+
+## CURRENT STATE — verified live 2026-09-01 (supersedes the 08-09 audit below)
+
+> Every number in this section was pulled from the live DB / cron logs / API probes on
+> 2026-09-01 (WIB). The **Build reality (2026-08-09)** section below is kept as historical
+> audit context; where they disagree, this section wins.
+
+### Phase scoreboard (verified, not aspirational)
+
+| Phase | State | Evidence (2026-09-01) |
+|---|---|---|
+| P0 Foundation | ✅ DONE | L1 probes live, L2 `pytest compute/tests/` = **67 passed** (3.9s) |
+| P1 Knowledge | ✅ baseline + ongoing | Obsidian vault live; nightly auto-digest running |
+| P2 Discovery + screening | 🟢 OPERATIONAL | GMGN-first v2: 9 sorts → 250 unique wallets/run, gate pass=8 fail=242, **17 tracked wallets**; source-2 (Dexscreener trending) live every 3h; 30,421 scan rows over **403 distinct wallets** in `wallet_scan_history` |
+| P3 Hypothesis + backtest | ⚠️ VALIDATION | `hyp_wallet_cluster_latency` in-sample n=16 PF 1.57; OOS gate NOT passed; all organic-only rule batteries blocked by day-concentration guard (research-runner: "no rule crossed the hardened gate") |
+| P4 Harness + guardrails | 🟡 NO-AGENT GUARDRAILS ACTIVE | LLM harness still unwired (`llm_shots`=0, `budget_ledger`=0, `tasks`=0); the *pipeline's* deterministic guards (liq>$5k, price cap, dedup, exposure cap, entry-window) are the live authority |
+| P5 Forward paper trade | 🟢 OPERATIONAL, NOT PROMOTED | 13 trades / 13 archives / 0 open; see ledger stats below |
+| P6 Delegation | 🔴 NOT STARTED | unchanged |
+
+### Live cron (all no-agent, 0 LLM tokens) — all completing, health watchdog green
+
+| Job | Cadence | Last completed (WIB 09-01) |
+|---|---|---|
+| theia-wallet-pipeline (v4) | 5 min | 20:40 — "0 new signals from 17 wallets" |
+| theia-wallet-monitor (v3) | 5 min | 20:40 — "no open positions" |
+| theia-wallet-discovery (GMGN v2) | 1 h | 20:00 — pass=8/250, tracked=17 |
+| theia-source2-discovery | 3 h | 18:00 — 40 pools → 6 pass prefilter, OHLCV corpus +~1,400 rows |
+| theia-pipeline-health | 5 min | 20:40 — **all checks OK** |
+| theia-research-runner | 12 h | 12:00 — no gate HIT (concentration guard held) |
+| theia-wallet-report + 7 legacy jobs | — | disabled |
+
+### Forward paper ledger — computed from `archives` (11 valid of 13; 2 voided `invalid_sol_usd`)
+
+```
+n=11  total=+1.6187 SOL  expectancy=+0.1472  PF=3.288  win_rate=54.5%
+exit mix: time_stop=6  hard_stop=4  tp_4x=1
+⚠ top single win (+0.998, tp_4x) = 43% of gross profit — concentration risk, same
+  single-wallet-artifact pattern that killed smart-wallet-follow. NOT promotable.
+reconstructable=2/13 (reserves captured at fill only since the 08-28 fix; 11 legacy=0)
+```
+
+**Promotion verdict: NOT PASSED.** Sample still tiny, profit concentrated in one trade,
+and every organic-only rule battery (dip_reversal n=9319, volume_lowbuy n=2008 — both
+exp>0/PF>1 headline) fails the **day-concentration guard** (positive days are a minority
+of active days). The 240m time-stop "improvement" was proven a recent-day artifact
+(2026-09-01 exit-tuning verdict). Gate-v2 whale cohort (B2) is the current forward proof
+target: ≥2 weeks paper before any promotion call.
+
+### Research board (post 08-31/09-01 batteries)
+
+- A1 exit tuning — done, no edge (240m = day-concentration artifact; live 60m kept)
+- B1 holdings-gate — veto-plausible: whale-exited cohort PF 0.225 (n=11 losers cluster);
+  entry signal unproven (n=1). Candidate: deploy as VETO in whale pipeline, never as trigger
+- B2 gate-v2 whale cohort forward — RUNNING (the live proof target)
+- B3 operator-hub veto — designed, untested (whales trace to 2-node funder hub HF3s↔F1ZL)
+- C2 early-holders — PARKED: snapshot depth degenerate (top10_share≈1.0), 0 corpus overlap,
+  survivor bias. Needs holder-API budget before retry
+- C1/C3/C4 — waiting on data maturity
+
+### Layer health (probed live 2026-09-01)
+
+- **L1 data:** Helius `getHealth` ok with real key (4-key rotation); Birdeye 200 with real
+  key; Dexscreener + GeckoTerminal 200 keyless; GMGN 403 direct (CF — browser-tier scrape
+  working via discovery, 250 wallets/run); **GoPlus endpoint currently connection-times-out
+  from the VPS** — impact contained because v4 screening is liq/price only (last GoPlus
+  screens row 2026-08-22); Obsidian vault dir OK; `theia-chainrpc.health` = ok
+- **L2 compute:** 67/67 tests pass. Money math still 100% via libs (all numbers above from
+  `expectancy.py`-style deterministic computation over DB rows)
+- **L3 skills:** `theia-current-state` patched 08-28; 8 design-era skills stale (documented
+  gap list there); no new drift found 09-01
+- **L4 orchestration:** 6 no-agent jobs healthy; LLM-harness path still unwired by design
+  (P4 partial); orchestrator model is now `z-ai/glm-5.2` via jembatan.ai (config changed
+  from the `deepseek-v4-*` era; subagent table below is historical)
+
+### Known drift (as of 09-01)
+
+- Runtime scripts ahead of repo persists (v4/v3 only in `~/.hermes/profiles/theia/scripts/`)
+- 11 uncommitted dashboard changes (Market Data view, lightweight-charts v5 work)
+- `price_snapshots_v2` table exists but empty (0 rows) — v1 table has 55,246 rows
+- Gateway runs under systemd user service; a reboot kills all cron until gateway restart
+  (documented restart procedure in agent memory)
+
+---
+
+## Build reality & sequencing — HISTORICAL AUDIT (2026-08-09)
 
 > **This section is the ground truth; everything below it is *intended design*.** The audit
 > found a healthy skeleton with unwired seams: every layer's components exist and pass their
