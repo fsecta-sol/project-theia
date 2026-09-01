@@ -1,0 +1,29 @@
+== suqh ==
+  decoded lots: 41 | mints touched: 13 | acquired-mints: 12
+  disposition: SOLD/round-trip 3 (25%) | STILL HELD 0 (0%) | VANISHED (net>0, holding 0) 9 (75%)
+  live token accounts (non-zero): 6649
+  vanished sample (net>0 but 0 holdings): [('DEADcNDw', 40000.0), ('HEXbYKbw', 20000.0), ('EgSeKQNq', 100.0), ('42BjfKva', 1.0), ('AdSJMDAJ', 1.0)]
+  SOL legs over window: out 17.3 / in 11.9 (net -5.3)
+== 2fg5 ==
+  decoded lots: 75 | mints touched: 46 | acquired-mints: 46
+  disposition: SOLD/round-trip 3 (7%) | STILL HELD 14 (30%) | VANISHED (net>0, holding 0) 29 (63%)
+  live token accounts (non-zero): 339
+  still-held sample: [('BenB3yZi', 9.8), ('5pwtv46x', 7.5), ('8iGrspg3', 4.4), ('BVcF9QL6', 5.4), ('AfjkSwtT', 8.1)]
+  vanished sample (net>0 but 0 holdings): [('3nwXLXxS', 10.0), ('HEXbYKbw', 30000.0), ('BNwbL17P', 10.0), ('GRAWVFnF', 20000.0), ('SHy9cbH9', 9.0)]
+  SOL legs over window: out 17.7 / in 11.9 (net -5.8)
+== ardin ==
+  decoded lots: 3 | mints touched: 2 | acquired-mints: 2
+  disposition: SOLD/round-trip 1 (50%) | STILL HELD 1 (50%) | VANISHED (net>0, holding 0) 0 (0%)
+  live token accounts (non-zero): 169
+  still-held sample: [('BenB3yZi', 6.6)]
+  SOL legs over window: out 5.1 / in 0.0 (net -5.1)
+== 6G8 ==
+  decoded lots: 1373 | mints touched: 355 | acquired-mints: 344
+  disposition: SOLD/round-trip 240 (70%) | STILL HELD 11 (3%) | VANISHED (net>0, holding 0) 93 (27%)
+  live token accounts (non-zero): 37
+  still-held sample: [('Es9vMFrz', 2.4), ('ECJUhqwS', 96089.3), ('H3AzKLrr', 9999.0), ('EPjFWdd5', 11.8), ('DJeT2vcu', 49593723.2)]
+  vanished sample (net>0 but 0 holdings): [('EgSeKQNq', 200.0), ('42BjfKva', 1.0), ('AdSJMDAJ', 2.0), ('E4Ap4icM', 9603604.0), ('9UsgMySA', 1.0)]
+  SOL legs over window: out 1255.4 / in 955.1 (net -300.2)
+
+saved _token_disposition.json
+DONE exit=0
