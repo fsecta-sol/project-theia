@@ -203,6 +203,45 @@ discriminator) and forward paper fills (B2). **Standing rule until the lifecycle
 recorder produces a full-window tape: keep accumulating forward sample; change nothing
 based on legacy verdicts; re-derive tactical rules only from clean tape.**
 
+### Storage decision record — SQLite now, TimescaleDB later (2026-09-02)
+
+User question: migrate `theia.db` from SQLite to TimescaleDB/PostgreSQL?
+
+**Decision: stay on SQLite for now; migrate to TimescaleDB (not vanilla Postgres) when a
+measured trigger fires. Design new tables migration-friendly from day one.**
+
+Measured facts (2026-09-02): `theia.db` = 22 MB; `price_snapshots` = 61k rows;
+`wallet_scan_history` = 34k rows; the 3.3 GB under `~/.hermes/theia/` is API disk cache
+(2.1 GB) + MCP venvs (1.2 GB), NOT the database. VPS headroom: 8 cores, 31 GB RAM,
+45 GB free disk. Single-writer access pattern (pipeline/monitor/recorder via flock).
+SQLite is comfortable at this scale by orders of magnitude.
+
+**Migration triggers (any one):**
+- `price_snapshots` exceeds **~10M rows** (full-window 1m tape: ~50 live pools ×
+  1,440 candles/day ≈ 26M rows/year — reachable within a year of the recorder running)
+- Backtests need continuous rollups (1m → 5m/15m/1h via `time_bucket` + continuous
+  aggregates) that SQLite would re-scan every run
+- Concurrent access contention (recorder + monitor + dashboard + backtest hitting
+  the DB simultaneously and locking)
+
+**Why TimescaleDB and not vanilla Postgres when triggered:** hypertables auto-partition
+by time, `time_bucket` is native, continuous aggregates compute rollups incrementally —
+exactly the OHLCV access pattern. Vanilla PG gives the rewrite cost without the
+time-series payoff.
+
+**Migration cost when triggered:** SQL dialect changes across ~6 live scripts
+(`INSERT OR IGNORE` → `ON CONFLICT DO NOTHING`, `PRAGMA`, inline `MIN()`); `theia-store`
+MCP rewrite (the single-writer boundary); one more service to run/backup on the VPS.
+Mitigation: introduce a single `db.py` access module first so the 6 scripts swap an
+import, not their SQL one by one. Migration path: per-month dump of `price_snapshots`
+→ `\copy` → `create_hypertable`. Hermes-internal DBs (`state.db`, cron DBs) stay SQLite
+— this decision covers Theia's own data only.
+
+**Explicit scope note:** storage migration does NOT address the bias inventory above —
+that is a what-we-record problem, not a where-we-store problem. Priority order is
+unchanged: lifecycle recorder first (with PG-ready schema: `(pool_addr, ts)` PK +
+provenance column), storage migration later if/when triggers fire.
+
 ---
 
 ## Build reality & sequencing — HISTORICAL AUDIT (2026-08-09)
