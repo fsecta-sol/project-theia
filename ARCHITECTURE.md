@@ -114,6 +114,52 @@ proof of no edge. Three concrete gaps identified and accepted as open work:
    record these per-signal (token_activity_snapshots table) and use as entry/exit context
    (buyer count trend, buy/sell imbalance, volume z-score across windows).
 
+### Tape-recorder redesign — full-window ingress/egress cycle (user discussion 2026-09-02, open item)
+
+**Current coverage gap (measured 2026-09-02):** of 142 pools in `price_snapshots`, only
+77 have ~full 1m coverage (≥95% of expected candles); 100 pools have <500 candles;
+median candle count per pool is **8** (minutes, not lifecycle). 131/142 pools have no
+new candle for >24h — recorded once at signal time, never revisited. The corpus is a
+collection of snapshots, not price histories.
+
+**Design: token lifecycle recorder (`token_lifecycle_recorder.py`, planned no-agent cron
+every 15 min) — a closed ingress/egress cycle, not an append-only pile:**
+
+```
+  INGRESS                          HEALTH CHECK (per tick)          EGRESS
+  ─────────                        ──────────────────────           ──────
+  whale-signal mints        ──►   1 call DexScreener/pool:   ──►  DEAD → tokens.status='dead',
+  source-2 trending mints         liq_usd, vol24, txns24           death_reason set, STOP
+  (all mints, not just            + last candle age from           fetching (stored candles
+   screen-passers)                price_snapshots                  kept as backtest fodder)
+                                  ──► ALIVE → full-window
+                                      backfill (dex_bars res=15,
+                                      incremental via cache)
+```
+
+- **Health/dead thresholds (initial, tunable):** liq_usd < 5k, vol24 < 1k, txns24 < 20,
+  or last candle > 24h old → dead. Dead tokens exit the fetch cycle; their stored
+  OHLCV remains queryable for backtests.
+- **Full-window mandate:** record from pool creation (dex_bars res=15 returns full
+  history from launch), not from first signal. All rows carry provenance (organic
+  forward-record vs retro-fetch) so backtests can exclude contaminated tails.
+- **Rate/budget:** ~150 DexScreener calls/run at ~50 live pools (2–3 calls per pool for
+  500-bar batches), keyless, through the existing `wallet_common` token-bucket + disk
+  cache. Well within free tier.
+- **Why:** closes data-quality critique items #2 and #3 — backtests get honest
+  lifecycle histories (including the tokens that died instantly, which the current
+  event-driven capture misses → survivor-bias fix), and fame/liveness metrics
+  (buy/sell imbalance, buyer-count trend) become computable per token over its full life.
+
+**Verified supporting facts (2026-09-02):** DexScreener free pool payload carries
+liq_usd, volume_usd.h24, txns24 {buys, sells} per token in one keyless call (live probe
+on MukLDtJ8Cx9: liq $325k, vol24 $7.8M, txns24 275k buys / 26.9k sells). Helius free
+tier additionally verified: webhook CRUD works (api.helius.xyz, `webhookType=enhanced`,
+≥3 hooks), `/v0/transactions` parse + getProgramAccounts allowed, 30 rapid RPC calls
+without 429 — enabling a seconds-latency detection path later (test receiver + tunnel
+round-trip verified 200 OK; a real SWAP delivery was not observed in the test window
+because the tracked whale did not trade — test webhook cleaned up after).
+
 ---
 
 ## Build reality & sequencing — HISTORICAL AUDIT (2026-08-09)
