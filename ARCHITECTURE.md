@@ -160,6 +160,15 @@ without 429 — enabling a seconds-latency detection path later (test receiver +
 round-trip verified 200 OK; a real SWAP delivery was not observed in the test window
 because the tracked whale did not trade — test webhook cleaned up after).
 
+**Postmortem raw-data re-audit (2026-09-02):** the 08-17 smart-wallet-follow postmortem's
+own inputs were audited (see vault note caveat for full numbers). Findings: swap tape
+strong (2,979 txs / 196 days — strategic verdict stands), but pre-entry OHLCV context is
+shallow (median 4h lookback) and **only 197 of 630 whale-traded mints (31%) ever had
+OHLCV fetched** → tactical entry-rule verdicts (dip-buy dead, T+1m worst) are NOT settled
+and must be re-derived from the full-window lifecycle tape once this recorder is live.
+The timing-grid retest (open item #1 above) inherits this: it is a re-test of tainted
+verdicts, not a confirmation of them.
+
 ---
 
 ## Build reality & sequencing — HISTORICAL AUDIT (2026-08-09)
