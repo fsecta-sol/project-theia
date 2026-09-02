@@ -169,6 +169,40 @@ and must be re-derived from the full-window lifecycle tape once this recorder is
 The timing-grid retest (open item #1 above) inherits this: it is a re-test of tainted
 verdicts, not a confirmation of them.
 
+### Bias inventory — full impact map (user discussion 2026-09-02, reference for all future verdicts)
+
+Six identified biases, with DIRECTION of distortion (not uniform — some push pessimistic,
+some optimistic, so per-verdict audit is mandatory, no single-direction correction):
+
+| # | Bias | Evidence | Distortion direction |
+|---|---|---|---|
+| 1 | Survivor bias in universe (only 197/630 whale-traded mints had OHLCV fetched) | postmortem re-audit | Measured expectancy OVERSTATED → "no edge" verdicts likely still too optimistic; strategy possibly worse than measured |
+| 2 | Shallow pre-entry context (median 4h candles before whale buy) | postmortem re-audit | Entry-rule verdicts invalid where they depend on pre-buy chart shape (dip-buy dead, T+1m worst, timing optimum) |
+| 3 | Event-driven recording (only screen-passing mints, only from T+35m detection) | coverage audit: median 8 candles/pool, 131/142 pools dead >24h | Corpus over-represents post-spike/falling charts → backtests skewed toward "no edge" |
+| 4 | Retro-fetch contamination (`_now` cache keys + adjacent fetch days dominating tails) | proven twice: 08-31 GATE_HIT, 09-01 exit-240m artifacts | False POSITIVES → risk of promoting bad rules; day-concentration guard is a patch, not a system |
+| 5 | Day-concentration / regime bias | top forward win = 43% of gross profit; 240m gain only on 08-30/31 | Aggregate exp>0 can be single-day regime, not mechanical edge |
+| 6 | GMGN as trust-provider data (not reconstructable) | Gate V2 fit to provider stats | If GMGN's wash-filtering leaks, our gate inherits the leak; thresholds (rPnl≥10k, txs≥500) fitted to possibly-biased provider numbers |
+
+**Impact on decisions currently LIVE:**
+
+| Active decision | Data source | Status |
+|---|---|---|
+| Gate V2 thresholds (rPnl≥10k, txs≥500, vol≥100k) | OOS persistence test n=269 | ⚠️ fitted within a biased ecosystem — parameters may be overfit to bias |
+| 17 tracked wallets | Gate V2 output | ⚠️ inherits #1 |
+| Entry timing T+25–35m | postmortem backtest (shallow pre-entry) | 🔴 UNSETTLED — optimal timing likely different |
+| liq>$5k veto, price cap 1.5×, MAX_OPEN_PER_WALLET 5 | postmortem v2–v5 | ⚠️ liq veto safe (consistent direction); price cap not re-verified |
+| exit time-stop 60m | M-04 | ⚠️ organic-only but day-concentration not audited as strictly as 09-01 battery |
+| B2 forward cohort (≥2 weeks) | paper fills — correct organic data | ✅ the ONLY clean decision path live — sample still small |
+
+**Net effects:** (a) false rejection is real — "no edge" verdicts were computed on flawed
+data and must not be treated as law; (b) false acceptance nearly happened (08-31 GATE_HIT
+would have promoted an artifact — caught only by the guard); (c) distortion directions
+differ per bias, so every tactical verdict needs individual audit; (d) the two truth
+anchors are the on-chain swap tape (structural findings: wallet decomposition, latency
+discriminator) and forward paper fills (B2). **Standing rule until the lifecycle
+recorder produces a full-window tape: keep accumulating forward sample; change nothing
+based on legacy verdicts; re-derive tactical rules only from clean tape.**
+
 ---
 
 ## Build reality & sequencing — HISTORICAL AUDIT (2026-08-09)
